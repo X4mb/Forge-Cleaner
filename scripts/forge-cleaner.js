@@ -22,47 +22,47 @@ function registerForgeCleanerSettings() {
   const categories = [
     {
       key: 'unlinkedTokens',
-      name: 'FORGE_CLEANER.UnlinkedTokens.Name',
-      hint: 'FORGE_CLEANER.UnlinkedTokens.Hint',
+      name: game.i18n.localize('FORGE_CLEANER.UnlinkedTokens.Name'),
+      hint: game.i18n.localize('FORGE_CLEANER.UnlinkedTokens.Hint'),
       defaultEnabled: true,
       defaultAction: 'flag',
     },
     {
       key: 'orphanedActiveEffects',
-      name: 'FORGE_CLEANER.OrphanedActiveEffects.Name',
-      hint: 'FORGE_CLEANER.OrphanedActiveEffects.Hint',
+      name: game.i18n.localize('FORGE_CLEANER.OrphanedActiveEffects.Name'),
+      hint: game.i18n.localize('FORGE_CLEANER.OrphanedActiveEffects.Hint'),
       defaultEnabled: true,
       defaultAction: 'flag',
     },
     {
       key: 'emptyDocuments',
-      name: 'FORGE_CLEANER.EmptyDocuments.Name',
-      hint: 'FORGE_CLEANER.EmptyDocuments.Hint',
+      name: game.i18n.localize('FORGE_CLEANER.EmptyDocuments.Name'),
+      hint: game.i18n.localize('FORGE_CLEANER.EmptyDocuments.Hint'),
       defaultEnabled: true,
       defaultAction: 'flag',
     },
     {
       key: 'duplicateAssets',
-      name: 'FORGE_CLEANER.DuplicateAssets.Name',
-      hint: 'FORGE_CLEANER.DuplicateAssets.Hint',
+      name: game.i18n.localize('FORGE_CLEANER.DuplicateAssets.Name'),
+      hint: game.i18n.localize('FORGE_CLEANER.DuplicateAssets.Hint'),
       defaultEnabled: false,
       defaultAction: 'flag',
     },
     {
       key: 'oldChatMessages',
-      name: 'FORGE_CLEANER.OldChatMessages.Name',
-      hint: 'FORGE_CLEANER.OldChatMessages.Hint',
+      name: game.i18n.localize('FORGE_CLEANER.OldChatMessages.Name'),
+      hint: game.i18n.localize('FORGE_CLEANER.OldChatMessages.Hint'),
       defaultEnabled: true,
       defaultAction: 'archive',
     },
   ];
 
   const actions = {
-    delete: 'FORGE_CLEANER.Action.Delete',
-    move: 'FORGE_CLEANER.Action.Move',
-    flag: 'FORGE_CLEANER.Action.Flag',
-    ignore: 'FORGE_CLEANER.Action.Ignore',
-    archive: 'FORGE_CLEANER.Action.Archive',
+    delete: game.i18n.localize('FORGE_CLEANER.Action.Delete'),
+    move: game.i18n.localize('FORGE_CLEANER.Action.Move'),
+    flag: game.i18n.localize('FORGE_CLEANER.Action.Flag'),
+    ignore: game.i18n.localize('FORGE_CLEANER.Action.Ignore'),
+    archive: game.i18n.localize('FORGE_CLEANER.Action.Archive'),
   };
 
   // Register settings for each category
@@ -76,8 +76,8 @@ function registerForgeCleanerSettings() {
       default: cat.defaultEnabled,
     });
     game.settings.register('forge-cleaner', `${cat.key}Action`, {
-      name: `${cat.name} - FORGE_CLEANER.Action`,
-      hint: 'FORGE_CLEANER.Action.Hint',
+      name: `${cat.name} - ${game.i18n.localize('FORGE_CLEANER.Action')}`,
+      hint: game.i18n.localize('FORGE_CLEANER.Action.Hint'),
       scope: 'world',
       config: true,
       type: String,
@@ -88,8 +88,8 @@ function registerForgeCleanerSettings() {
 
   // Scan frequency (hours)
   game.settings.register('forge-cleaner', 'scanFrequency', {
-    name: 'FORGE_CLEANER.ScanFrequency.Name',
-    hint: 'FORGE_CLEANER.ScanFrequency.Hint',
+    name: game.i18n.localize('FORGE_CLEANER.ScanFrequency.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.ScanFrequency.Hint'),
     scope: 'world',
     config: true,
     type: Number,
@@ -99,8 +99,8 @@ function registerForgeCleanerSettings() {
 
   // Scan on world load
   game.settings.register('forge-cleaner', 'scanOnWorldLoad', {
-    name: 'FORGE_CLEANER.ScanOnWorldLoad.Name',
-    hint: 'FORGE_CLEANER.ScanOnWorldLoad.Hint',
+    name: game.i18n.localize('FORGE_CLEANER.ScanOnWorldLoad.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.ScanOnWorldLoad.Hint'),
     scope: 'world',
     config: true,
     type: Boolean,
@@ -109,8 +109,8 @@ function registerForgeCleanerSettings() {
 
   // Age of chat messages to delete/archive (days)
   game.settings.register('forge-cleaner', 'chatMessageAge', {
-    name: 'FORGE_CLEANER.ChatMessageAge.Name',
-    hint: 'FORGE_CLEANER.ChatMessageAge.Hint',
+    name: game.i18n.localize('FORGE_CLEANER.ChatMessageAge.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.ChatMessageAge.Hint'),
     scope: 'world',
     config: true,
     type: Number,
@@ -120,9 +120,9 @@ function registerForgeCleanerSettings() {
 
   // Manual scan trigger button (uses a menu setting for button)
   game.settings.registerMenu('forge-cleaner', 'manualScan', {
-    name: 'FORGE_CLEANER.ManualScan.Name',
-    label: 'FORGE_CLEANER.ManualScan.Label',
-    hint: 'FORGE_CLEANER.ManualScan.Hint',
+    name: game.i18n.localize('FORGE_CLEANER.ManualScan.Name'),
+    label: game.i18n.localize('FORGE_CLEANER.ManualScan.Label'),
+    hint: game.i18n.localize('FORGE_CLEANER.ManualScan.Hint'),
     icon: 'fas fa-broom',
     type: ForgeCleanerManualScanMenu,
     restricted: true,
@@ -130,8 +130,8 @@ function registerForgeCleanerSettings() {
 
   // Debug logging setting
   game.settings.register('forge-cleaner', 'debugLogging', {
-    name: 'FORGE_CLEANER.DebugLogging.Name',
-    hint: 'FORGE_CLEANER.DebugLogging.Hint',
+    name: game.i18n.localize('FORGE_CLEANER.DebugLogging.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.DebugLogging.Hint'),
     scope: 'world',
     config: true,
     type: Boolean,
