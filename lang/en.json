@@ -1,0 +1,37 @@
+{
+  "FORGE_CLEANER.ModuleName": "Forge Cleaner",
+  "FORGE_CLEANER.ModuleDescription": "Periodically scans and cleans up unused, orphaned, or redundant data in the active Foundry VTT world to optimize performance and data hygiene.",
+
+  "FORGE_CLEANER.UnlinkedTokens.Name": "Scan for Unlinked Tokens",
+  "FORGE_CLEANER.UnlinkedTokens.Hint": "Enable scanning for tokens on scenes that reference missing actors.",
+  "FORGE_CLEANER.OrphanedActiveEffects.Name": "Scan for Orphaned Active Effects",
+  "FORGE_CLEANER.OrphanedActiveEffects.Hint": "Enable scanning for active effects attached to actors that reference missing items or sources.",
+  "FORGE_CLEANER.EmptyDocuments.Name": "Scan for Empty Documents",
+  "FORGE_CLEANER.EmptyDocuments.Hint": "Enable scanning for documents (actors, items, journals, etc.) that have no content or properties beyond their default state.",
+  "FORGE_CLEANER.DuplicateAssets.Name": "Scan for Duplicate Assets",
+  "FORGE_CLEANER.DuplicateAssets.Hint": "Enable scanning for documents that reference the same asset file path redundantly.",
+  "FORGE_CLEANER.OldChatMessages.Name": "Scan for Old Chat Messages",
+  "FORGE_CLEANER.OldChatMessages.Hint": "Enable scanning for chat messages older than the specified age.",
+
+  "FORGE_CLEANER.Action": "Cleanup Action",
+  "FORGE_CLEANER.Action.Hint": "Select the action to take for this category of junk data.",
+  "FORGE_CLEANER.Action.Delete": "Delete Automatically",
+  "FORGE_CLEANER.Action.Move": "Move to Quarantine Compendium",
+  "FORGE_CLEANER.Action.Flag": "Flag for Review (Chat Notification)",
+  "FORGE_CLEANER.Action.Ignore": "Ignore",
+  "FORGE_CLEANER.Action.Archive": "Archive (for chat messages)",
+
+  "FORGE_CLEANER.ScanFrequency.Name": "Scan Frequency (hours)",
+  "FORGE_CLEANER.ScanFrequency.Hint": "How often should Forge Cleaner scan the world for junk data?",
+  "FORGE_CLEANER.ScanOnWorldLoad.Name": "Scan on World Load",
+  "FORGE_CLEANER.ScanOnWorldLoad.Hint": "Perform a scan automatically each time the world is loaded.",
+  "FORGE_CLEANER.ChatMessageAge.Name": "Age of Chat Messages (days)",
+  "FORGE_CLEANER.ChatMessageAge.Hint": "Chat messages older than this number of days will be considered for deletion or archiving.",
+
+  "FORGE_CLEANER.ManualScan.Name": "Manual Scan",
+  "FORGE_CLEANER.ManualScan.Label": "Run Scan Now",
+  "FORGE_CLEANER.ManualScan.Hint": "Click to immediately scan and clean the world based on current settings.",
+  "FORGE_CLEANER.ManualScan.Triggered": "Forge Cleaner: Manual scan triggered. Running cleanup...",
+  "FORGE_CLEANER.DebugLogging.Name": "Enable Debug Logging",
+  "FORGE_CLEANER.DebugLogging.Hint": "If enabled, Forge Cleaner will log detailed information about its scan and cleanup process to the browser console."
+} 
