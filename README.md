@@ -1,3 +1,7 @@
+# ⚠️ Work In Progress: Use at Your Own Risk
+
+**This module is currently under active development. No fully working or stable version has been released yet. Features and behavior may change at any time, and data loss or instability is possible. Use in production worlds at your own risk!**
+
 # Forge Cleaner
 
 A Foundry VTT module for automated world data hygiene and optimization.
