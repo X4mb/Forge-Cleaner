@@ -13,7 +13,6 @@
   "FORGE_CLEANER.OldChatMessages.Name": "Scan for Old Chat Messages",
   "FORGE_CLEANER.OldChatMessages.Hint": "Enable scanning for chat messages older than the specified age.",
 
-  "FORGE_CLEANER.Action": "Cleanup Action",
   "FORGE_CLEANER.Action.Hint": "Select the action to take for this category of junk data.",
   "FORGE_CLEANER.Action.Delete": "Delete Automatically",
   "FORGE_CLEANER.Action.Move": "Move to Quarantine Compendium",
