@@ -36,5 +36,21 @@
   "FORGE_CLEANER.ManualScan.Confirm": "Confirm",
   "FORGE_CLEANER.ManualScan.Cancel": "Cancel",
   "FORGE_CLEANER.DebugLogging.Name": "Enable Debug Logging",
-  "FORGE_CLEANER.DebugLogging.Hint": "If enabled, Forge Cleaner will log detailed information about its scan and cleanup process to the browser console."
+  "FORGE_CLEANER.DebugLogging.Hint": "If enabled, Forge Cleaner will log detailed information about its scan and cleanup process to the browser console.",
+  "FORGE_CLEANER.ReviewFlaggedScenes.Name": "Review Flagged Scenes",
+  "FORGE_CLEANER.ReviewFlaggedScenes.Label": "Review Flagged Scenes",
+  "FORGE_CLEANER.ReviewFlaggedScenes.Hint": "Open a dialog to review, archive, or protect scenes flagged for review.",
+  "FORGE_CLEANER.ReviewFlaggedScenes.NoScenes": "No flagged scenes to review.",
+  "FORGE_CLEANER.ReviewFlaggedScenes.SceneNotFound": "Scene not found.",
+  "FORGE_CLEANER.ReviewFlaggedScenes.ReviewScene": "Review Scene",
+  "FORGE_CLEANER.ReviewFlaggedScenes.SceneDetails": "Scene Details",
+  "FORGE_CLEANER.ReviewFlaggedScenes.Close": "Close",
+  "FORGE_CLEANER.ReviewFlaggedScenes.Tokens": "Flagged Tokens",
+  "FORGE_CLEANER.ReviewFlaggedScenes.Effects": "Flagged Effects",
+  "FORGE_CLEANER.ReviewFlaggedScenes.Documents": "Flagged Documents",
+  "FORGE_CLEANER.ReviewFlaggedScenes.ChatMessages": "Flagged Chat Messages",
+  "FORGE_CLEANER.ArchiveHandling.Name": "Scene Archive Handling",
+  "FORGE_CLEANER.ArchiveHandling.Hint": "Choose how scenes should be archived: just flagged, or moved to a special folder.",
+  "FORGE_CLEANER.ArchiveHandling.Flag": "Flag Only (do not move)",
+  "FORGE_CLEANER.ArchiveHandling.Move": "Move to Archive Folder"
 } 

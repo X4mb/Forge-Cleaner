@@ -128,6 +128,16 @@ function registerForgeCleanerSettings() {
     restricted: true,
   });
 
+  // Review flagged scenes button
+  game.settings.registerMenu('forge-cleaner', 'reviewFlaggedScenes', {
+    name: game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.Name'),
+    label: game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.Label'),
+    hint: game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.Hint'),
+    icon: 'fas fa-eye',
+    type: ForgeCleanerReviewFlaggedScenesMenu,
+    restricted: true,
+  });
+
   // Debug logging setting
   game.settings.register('forge-cleaner', 'debugLogging', {
     name: game.i18n.localize('FORGE_CLEANER.DebugLogging.Name'),
@@ -136,6 +146,20 @@ function registerForgeCleanerSettings() {
     config: true,
     type: Boolean,
     default: false,
+  });
+
+  // Archive handling option
+  game.settings.register('forge-cleaner', 'archiveHandling', {
+    name: game.i18n.localize('FORGE_CLEANER.ArchiveHandling.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.ArchiveHandling.Hint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    choices: {
+      flag: game.i18n.localize('FORGE_CLEANER.ArchiveHandling.Flag'),
+      move: game.i18n.localize('FORGE_CLEANER.ArchiveHandling.Move')
+    },
+    default: 'flag',
   });
 }
 
@@ -181,6 +205,86 @@ class ForgeCleanerManualScanMenu extends FormApplication {
       },
       default: 'cancel'
     }).render(true);
+  }
+}
+
+/**
+ * Settings menu for reviewing flagged scenes.
+ */
+class ForgeCleanerReviewFlaggedScenesMenu extends FormApplication {
+  static get defaultOptions() {
+    return mergeObject(super.defaultOptions, {
+      id: 'forge-cleaner-review-flagged-scenes',
+      title: game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.Name'),
+      template: '', // No template needed
+      closeOnSubmit: true,
+      submitOnChange: false,
+      submitOnClose: false,
+      width: 600,
+      height: 'auto',
+    });
+  }
+
+  async render(force, options) {
+    const flaggedScenes = game.scenes.contents.filter(scene => scene.data.flags.forgeCleaner?.flaggedForReview);
+    if (!flaggedScenes.length) {
+      ui.notifications.warn(game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.NoScenes'));
+      return;
+    }
+
+    const content = flaggedScenes.map(scene => {
+      return `
+        <div class="forge-cleaner-scene-review-item">
+          <h4>${scene.name}</h4>
+          <button class="forge-cleaner-archive-scene" data-scene-id="${scene.id}">${game.i18n.localize('FORGE_CLEANER.Action.Archive')}</button>
+          <button class="forge-cleaner-protect-scene" data-scene-id="${scene.id}">${game.i18n.localize('FORGE_CLEANER.Action.Ignore')}</button>
+        </div>
+      `;
+    }).join('');
+
+    this.content = `
+      <div class="forge-cleaner-review-flagged-scenes-container">
+        ${content}
+      </div>
+    `;
+
+    super.render(force, options);
+
+    this.element.find('.forge-cleaner-archive-scene').on('click', async (event) => {
+      const sceneId = event.currentTarget.dataset.sceneId;
+      const scene = game.scenes.get(sceneId);
+      if (scene) {
+        await this.archiveScene(scene);
+      }
+    });
+    this.element.find('.forge-cleaner-protect-scene').on('click', async (event) => {
+      const sceneId = event.currentTarget.dataset.sceneId;
+      const scene = game.scenes.get(sceneId);
+      if (scene) {
+        await scene.setFlag('forgeCleaner', 'protected', true);
+        await scene.unsetFlag('forgeCleaner', 'flaggedForReview');
+        ui.notifications.info(`${scene.name} protected from future cleanup.`);
+        this.render(true);
+      }
+    });
+  }
+
+  async archiveScene(scene) {
+    const archiveHandling = game.settings.get('forge-cleaner', 'archiveHandling');
+    if (archiveHandling === 'move') {
+      // Move to Archive folder, create if needed
+      let archiveFolder = game.folders.find(f => f.type === 'Scene' && f.name === 'Archive');
+      if (!archiveFolder) {
+        archiveFolder = await Folder.create({ name: 'Archive', type: 'Scene', color: '#888888' });
+      }
+      await scene.update({ folder: archiveFolder.id });
+      ui.notifications.info(`${scene.name} moved to Archive folder.`);
+    } else {
+      ui.notifications.info(`${scene.name} flagged as archived.`);
+    }
+    await scene.setFlag('forgeCleaner', 'archived', true);
+    await scene.unsetFlag('forgeCleaner', 'flaggedForReview');
+    this.render(true);
   }
 }
 
@@ -316,7 +420,7 @@ async function cleanupOrphanedActiveEffects(action) {
  */
 async function cleanupEmptyDocuments(action) {
   let affected = [];
-  // Check Actors, Items, Journals, Macros, Playlists, Tables, Cards
+  // Check Actors, Items, Journals, Macros, Playlists, Tables, Cards, Scenes
   const types = [
     { collection: game.actors, type: 'Actor' },
     { collection: game.items, type: 'Item' },
@@ -324,27 +428,38 @@ async function cleanupEmptyDocuments(action) {
     { collection: game.macros, type: 'Macro' },
     { collection: game.playlists, type: 'Playlist' },
     { collection: game.tables, type: 'RollTable' },
-    { collection: game.cards, type: 'Cards' }
+    { collection: game.cards, type: 'Cards' },
+    { collection: game.scenes, type: 'Scene' }
   ];
   for (const { collection, type } of types) {
     for (const doc of collection?.contents || []) {
+      // Skip protected scenes
+      if (type === 'Scene' && doc.getFlag && await doc.getFlag('forgeCleaner', 'protected')) continue;
       if (isEmptyDocument(doc)) {
         affected.push({ doc, type });
       }
     }
   }
   if (!affected.length) return [];
+  // Separate scenes from other types
+  const scenes = affected.filter(a => a.type === 'Scene');
+  const others = affected.filter(a => a.type !== 'Scene');
+  // Always flag scenes for review
+  if (scenes.length) {
+    sendForgeCleanerSummary(`Empty Scenes found: ${scenes.map(a => `${a.doc.name}`).join(', ')}`);
+  }
+  // Handle other types as usual
   switch (action) {
     case 'delete':
-      for (const { doc, type } of affected) {
+      for (const { doc, type } of others) {
         await doc.delete();
       }
       break;
     case 'move':
-      await moveDocumentsToQuarantine(affected.map(a => a.doc));
+      await moveDocumentsToQuarantine(others.map(a => a.doc));
       break;
     case 'flag':
-      sendForgeCleanerSummary(`Empty Documents found: ${affected.map(a => `${a.type} [${a.doc.name}]`).join(', ')}`);
+      if (others.length) sendForgeCleanerSummary(`Empty Documents found: ${others.map(a => `${a.type} [${a.doc.name}]`).join(', ')}`);
       break;
     case 'ignore':
     default:
