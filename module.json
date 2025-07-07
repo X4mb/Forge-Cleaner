@@ -2,7 +2,7 @@
   "id": "forge-cleaner",
   "title": "Forge Cleaner",
   "description": "Periodically scans and cleans up unused, orphaned, or redundant data in the active Foundry VTT world to optimize performance and data hygiene.",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "authors": [
     { "name": "Xamb", "email": "", "url": "https://github.com/X4mb/Forge-Cleaner" }
   ],
