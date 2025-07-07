@@ -16,7 +16,7 @@
     {
       "name": "forge-cleaner-quarantine",
       "label": "Forge Cleaner Quarantine",
-      "system": "",
+      "system": "pf2e",
       "path": "packs/forge-cleaner-quarantine.db",
       "type": "Actor"
     }
