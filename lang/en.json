@@ -31,6 +31,10 @@
   "FORGE_CLEANER.ManualScan.Label": "Run Scan Now",
   "FORGE_CLEANER.ManualScan.Hint": "Click to immediately scan and clean the world based on current settings.",
   "FORGE_CLEANER.ManualScan.Triggered": "Forge Cleaner: Manual scan triggered. Running cleanup...",
+  "FORGE_CLEANER.ManualScan.ConfirmTitle": "Confirm Manual Scan",
+  "FORGE_CLEANER.ManualScan.ConfirmPrompt": "Are you sure you want to run Forge Cleaner now? This may delete or modify data based on your current settings.",
+  "FORGE_CLEANER.ManualScan.Confirm": "Confirm",
+  "FORGE_CLEANER.ManualScan.Cancel": "Cancel",
   "FORGE_CLEANER.DebugLogging.Name": "Enable Debug Logging",
   "FORGE_CLEANER.DebugLogging.Hint": "If enabled, Forge Cleaner will log detailed information about its scan and cleanup process to the browser console."
 } 

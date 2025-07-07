@@ -162,8 +162,25 @@ class ForgeCleanerManualScanMenu extends FormApplication {
     });
   }
   async render(force, options) {
-    ui.notifications.info(game.i18n.localize('FORGE_CLEANER.ManualScan.Triggered'));
-    await performForgeCleanerScan();
+    new Dialog({
+      title: game.i18n.localize('FORGE_CLEANER.ManualScan.ConfirmTitle'),
+      content: `<p>${game.i18n.localize('FORGE_CLEANER.ManualScan.ConfirmPrompt')}</p>`,
+      buttons: {
+        confirm: {
+          icon: '<i class="fas fa-check"></i>',
+          label: game.i18n.localize('FORGE_CLEANER.ManualScan.Confirm'),
+          callback: async () => {
+            ui.notifications.info(game.i18n.localize('FORGE_CLEANER.ManualScan.Triggered'));
+            await performForgeCleanerScan();
+          }
+        },
+        cancel: {
+          icon: '<i class="fas fa-times"></i>',
+          label: game.i18n.localize('FORGE_CLEANER.ManualScan.Cancel'),
+        }
+      },
+      default: 'cancel'
+    }).render(true);
   }
 }
 
