@@ -23,5 +23,7 @@
   "license": "MIT",
   "readme": "README.md",
   "bugs": "https://github.com/X4mb/Forge-Cleaner/issues",
-  "url": "https://github.com/X4mb/Forge-Cleaner"
+  "url": "https://github.com/X4mb/Forge-Cleaner",
+  "manifest": "https://raw.githubusercontent.com/X4mb/Forge-Cleaner/main/module.json",
+  "download": "https://github.com/X4mb/Forge-Cleaner/archive/refs/heads/main.zip"
 } 
