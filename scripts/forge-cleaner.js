@@ -5,6 +5,9 @@
  * @license MIT
  */
 
+// Import ApplicationV2 for Foundry VTT v13+
+const { ApplicationV2 } = foundry.applications.api;
+
 Hooks.once('init', () => {
   console.log('Forge Cleaner | Initializing module');
   registerForgeCleanerSettings();
@@ -171,6 +174,20 @@ function registerForgeCleanerSettings() {
     type: Boolean,
     default: false,
   });
+
+  // Add empty document strictness setting
+  game.settings.register('forge-cleaner', 'emptyDocumentStrictness', {
+    name: game.i18n.localize('FORGE_CLEANER.EmptyDocumentStrictness.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.EmptyDocumentStrictness.Hint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    choices: {
+      conservative: game.i18n.localize('FORGE_CLEANER.EmptyDocumentStrictness.Conservative'),
+      strict: game.i18n.localize('FORGE_CLEANER.EmptyDocumentStrictness.Strict')
+    },
+    default: 'conservative',
+  });
 }
 
 function forgeCleanerLog(...args) {
@@ -179,18 +196,12 @@ function forgeCleanerLog(...args) {
   }
 }
 
-/**
- * Settings menu for manual scan trigger.
- */
-class ForgeCleanerManualScanMenu extends FormApplication {
+// --- ApplicationV2 Migration ---
+class ForgeCleanerManualScanMenu extends ApplicationV2 {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: 'forge-cleaner-manual-scan',
       title: game.i18n.localize('FORGE_CLEANER.ManualScan.Name'),
-      template: '', // No template needed
-      closeOnSubmit: true,
-      submitOnChange: false,
-      submitOnClose: false,
       width: 400,
       height: 'auto',
     });
@@ -218,30 +229,21 @@ class ForgeCleanerManualScanMenu extends FormApplication {
   }
 }
 
-/**
- * Settings menu for reviewing flagged scenes.
- */
-class ForgeCleanerReviewFlaggedScenesMenu extends FormApplication {
+class ForgeCleanerReviewFlaggedScenesMenu extends ApplicationV2 {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: 'forge-cleaner-review-flagged-scenes',
       title: game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.Name'),
-      template: '', // No template needed
-      closeOnSubmit: true,
-      submitOnChange: false,
-      submitOnClose: false,
       width: 600,
       height: 'auto',
     });
   }
-
   async render(force, options) {
     const flaggedScenes = game.scenes.contents.filter(scene => scene.flags['forge-cleaner']?.flaggedForReview);
     if (!flaggedScenes.length) {
       ui.notifications.warn(game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.NoScenes'));
       return;
     }
-
     const content = flaggedScenes.map(scene => {
       return `
         <div class="forge-cleaner-scene-review-item">
@@ -251,15 +253,12 @@ class ForgeCleanerReviewFlaggedScenesMenu extends FormApplication {
         </div>
       `;
     }).join('');
-
     this.content = `
       <div class="forge-cleaner-review-flagged-scenes-container">
         ${content}
       </div>
     `;
-
     super.render(force, options);
-
     this.element.find('.forge-cleaner-archive-scene').on('click', async (event) => {
       const sceneId = event.currentTarget.dataset.sceneId;
       const scene = game.scenes.get(sceneId);
@@ -278,11 +277,9 @@ class ForgeCleanerReviewFlaggedScenesMenu extends FormApplication {
       }
     });
   }
-
   async archiveScene(scene) {
     const archiveHandling = game.settings.get('forge-cleaner', 'archiveHandling');
     if (archiveHandling === 'move') {
-      // Move to Archive folder, create if needed
       let archiveFolder = game.folders.find(f => f.type === 'Scene' && f.name === 'Archive');
       if (!archiveFolder) {
         archiveFolder = await Folder.create({ name: 'Archive', type: 'Scene', color: '#888888' });
@@ -483,10 +480,70 @@ async function cleanupEmptyDocuments(action) {
   return affected;
 }
 
-/**
- * Helper: Determine if a document is empty (no name/content or only default properties).
- */
+// --- Improved isEmptyDocument ---
 function isEmptyDocument(doc) {
+  const strictness = game.settings?.get('forge-cleaner', 'emptyDocumentStrictness') || 'conservative';
+  // --- Conservative (default): Only flag if truly empty ---
+  if (strictness === 'conservative') {
+    // Actors: name blank AND no system data AND no effects AND no items
+    if (doc.type === 'Actor') {
+      if (doc.name && doc.name.trim() !== '') return false;
+      if (doc.system && Object.keys(doc.system).some(k => doc.system[k])) return false;
+      if (doc.effects && doc.effects.contents && doc.effects.contents.length > 0) return false;
+      if (doc.items && doc.items.length > 0) return false;
+      return true;
+    }
+    // Items: name blank AND no system data
+    if (doc.type === 'Item') {
+      if (doc.name && doc.name.trim() !== '') return false;
+      if (doc.system && Object.keys(doc.system).some(k => doc.system[k])) return false;
+      return true;
+    }
+    // JournalEntry: name blank AND all pages empty
+    if (doc.type === 'JournalEntry') {
+      if (doc.name && doc.name.trim() !== '') return false;
+      if (doc.pages && doc.pages.size > 0) {
+        for (const page of doc.pages.contents) {
+          if (page.text?.content?.trim()) return false;
+        }
+      }
+      return true;
+    }
+    // Macro: name blank AND no command/script
+    if (doc.type === 'Macro') {
+      if (doc.name && doc.name.trim() !== '') return false;
+      if (doc.command && doc.command.trim() !== '') return false;
+      return true;
+    }
+    // Playlist: name blank AND no sounds
+    if (doc.type === 'Playlist') {
+      if (doc.name && doc.name.trim() !== '') return false;
+      if (doc.sounds && doc.sounds.length > 0) return false;
+      return true;
+    }
+    // RollTable: name blank AND no results
+    if (doc.type === 'RollTable') {
+      if (doc.name && doc.name.trim() !== '') return false;
+      if (doc.results && doc.results.length > 0) return false;
+      return true;
+    }
+    // Cards: name blank AND no cards
+    if (doc.type === 'Cards') {
+      if (doc.name && doc.name.trim() !== '') return false;
+      if (doc.cards && doc.cards.length > 0) return false;
+      return true;
+    }
+    // Scene: name blank AND no tokens
+    if (doc.type === 'Scene') {
+      if (doc.name && doc.name.trim() !== '') return false;
+      if (doc.tokens && doc.tokens.contents && doc.tokens.contents.length > 0) return false;
+      return true;
+    }
+    // Fallback: name blank
+    if (!doc.name || doc.name.trim() === '') return true;
+    return false;
+  }
+  // --- Strict: Old logic (name blank OR no content) ---
   // Consider empty if name is blank and no description/content fields
   if (!doc.name || doc.name.trim() === '') return true;
   if (doc.data && doc.data.description && doc.data.description.value) {

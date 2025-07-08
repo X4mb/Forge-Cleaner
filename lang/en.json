@@ -55,5 +55,9 @@
   "FORGE_CLEANER.ArchiveHandling.Move": "Move to Archive Folder",
   "FORGE_CLEANER.ScanConfirmationOnly.Name": "Show Only Confirmation for Scan Results",
   "FORGE_CLEANER.ScanConfirmationOnly.Hint": "If enabled, only a confirmation message will be shown after a scan instead of a detailed summary.",
-  "FORGE_CLEANER.ScanConfirmationOnly.Confirmation": "Forge Cleaner scan completed."
+  "FORGE_CLEANER.ScanConfirmationOnly.Confirmation": "Forge Cleaner scan completed.",
+  "FORGE_CLEANER.EmptyDocumentStrictness.Name": "Empty Document Detection Strictness",
+  "FORGE_CLEANER.EmptyDocumentStrictness.Hint": "Choose how strict the module should be when detecting empty documents. Conservative (default) only flags truly empty documents. Strict flags documents with blank names or minimal content.",
+  "FORGE_CLEANER.EmptyDocumentStrictness.Conservative": "Conservative (only truly empty)",
+  "FORGE_CLEANER.EmptyDocumentStrictness.Strict": "Strict (flag more aggressively)"
 } 
