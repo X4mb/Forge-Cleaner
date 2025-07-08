@@ -184,7 +184,7 @@ function forgeCleanerLog(...args) {
  */
 class ForgeCleanerManualScanMenu extends FormApplication {
   static get defaultOptions() {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       id: 'forge-cleaner-manual-scan',
       title: game.i18n.localize('FORGE_CLEANER.ManualScan.Name'),
       template: '', // No template needed
@@ -223,7 +223,7 @@ class ForgeCleanerManualScanMenu extends FormApplication {
  */
 class ForgeCleanerReviewFlaggedScenesMenu extends FormApplication {
   static get defaultOptions() {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       id: 'forge-cleaner-review-flagged-scenes',
       title: game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.Name'),
       template: '', // No template needed
@@ -236,7 +236,7 @@ class ForgeCleanerReviewFlaggedScenesMenu extends FormApplication {
   }
 
   async render(force, options) {
-    const flaggedScenes = game.scenes.contents.filter(scene => scene.data.flags.forgeCleaner?.flaggedForReview);
+    const flaggedScenes = game.scenes.contents.filter(scene => scene.flags['forge-cleaner']?.flaggedForReview);
     if (!flaggedScenes.length) {
       ui.notifications.warn(game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.NoScenes'));
       return;
@@ -271,8 +271,8 @@ class ForgeCleanerReviewFlaggedScenesMenu extends FormApplication {
       const sceneId = event.currentTarget.dataset.sceneId;
       const scene = game.scenes.get(sceneId);
       if (scene) {
-        await scene.setFlag('forgeCleaner', 'protected', true);
-        await scene.unsetFlag('forgeCleaner', 'flaggedForReview');
+        await scene.setFlag('forge-cleaner', 'protected', true);
+        await scene.unsetFlag('forge-cleaner', 'flaggedForReview');
         ui.notifications.info(`${scene.name} protected from future cleanup.`);
         this.render(true);
       }
@@ -292,8 +292,8 @@ class ForgeCleanerReviewFlaggedScenesMenu extends FormApplication {
     } else {
       ui.notifications.info(`${scene.name} flagged as archived.`);
     }
-    await scene.setFlag('forgeCleaner', 'archived', true);
-    await scene.unsetFlag('forgeCleaner', 'flaggedForReview');
+    await scene.setFlag('forge-cleaner', 'archived', true);
+    await scene.unsetFlag('forge-cleaner', 'flaggedForReview');
     this.render(true);
   }
 }
@@ -449,7 +449,7 @@ async function cleanupEmptyDocuments(action) {
   for (const { collection, type } of types) {
     for (const doc of collection?.contents || []) {
       // Skip protected scenes
-      if (type === 'Scene' && doc.getFlag && await doc.getFlag('forgeCleaner', 'protected')) continue;
+      if (type === 'Scene' && doc.getFlag && await doc.getFlag('forge-cleaner', 'protected')) continue;
       if (isEmptyDocument(doc)) {
         affected.push({ doc, type });
       }
