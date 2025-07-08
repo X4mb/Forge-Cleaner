@@ -52,5 +52,8 @@
   "FORGE_CLEANER.ArchiveHandling.Name": "Scene Archive Handling",
   "FORGE_CLEANER.ArchiveHandling.Hint": "Choose how scenes should be archived: just flagged, or moved to a special folder.",
   "FORGE_CLEANER.ArchiveHandling.Flag": "Flag Only (do not move)",
-  "FORGE_CLEANER.ArchiveHandling.Move": "Move to Archive Folder"
+  "FORGE_CLEANER.ArchiveHandling.Move": "Move to Archive Folder",
+  "FORGE_CLEANER.ScanConfirmationOnly.Name": "Show Only Confirmation for Scan Results",
+  "FORGE_CLEANER.ScanConfirmationOnly.Hint": "If enabled, only a confirmation message will be shown after a scan instead of a detailed summary.",
+  "FORGE_CLEANER.ScanConfirmationOnly.Confirmation": "Forge Cleaner scan completed."
 } 

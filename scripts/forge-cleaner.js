@@ -161,6 +161,16 @@ function registerForgeCleanerSettings() {
     },
     default: 'flag',
   });
+
+  // Show only confirmation after scan (new setting)
+  game.settings.register('forge-cleaner', 'scanConfirmationOnly', {
+    name: game.i18n.localize('FORGE_CLEANER.ScanConfirmationOnly.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.ScanConfirmationOnly.Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
 }
 
 function forgeCleanerLog(...args) {
@@ -373,8 +383,13 @@ async function performForgeCleanerScan() {
 
   forgeCleanerLog('Scan summary:', summary);
   // Notify GM
-  if (summary.length) {
+  const confirmationOnly = game.settings.get('forge-cleaner', 'scanConfirmationOnly');
+  if (confirmationOnly) {
+    sendForgeCleanerSummary(game.i18n.localize('FORGE_CLEANER.ScanConfirmationOnly.Confirmation'));
+  } else if (summary.length) {
     sendForgeCleanerSummary(`Automated Cleanup: ${summary.join(', ')}.`);
+  } else {
+    sendForgeCleanerSummary(game.i18n.localize('FORGE_CLEANER.ScanConfirmationOnly.Confirmation'));
   }
 }
 
