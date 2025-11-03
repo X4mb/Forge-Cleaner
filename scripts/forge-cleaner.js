@@ -88,6 +88,7 @@ Hooks.once('init', () => {
 
 /**
  * Register module settings in the Foundry VTT settings menu.
+ * Registers all configuration settings, folder paths, and menu buttons.
  */
 function registerForgeCleanerSettings() {
   // Section 1: Apply Organization Button
@@ -228,6 +229,10 @@ function registerForgeCleanerSettings() {
   });
 }
 
+/**
+ * Log messages to console when debug logging is enabled.
+ * @param {...any} args - Arguments to log
+ */
 function forgeCleanerLog(...args) {
   if (game.settings?.get('forge-cleaner', 'debugLogging')) {
     console.log('[Forge Cleaner]', ...args);
