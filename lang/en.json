@@ -24,8 +24,20 @@
   "FORGE_CLEANER.ScenesFolder.Name": "Scenes Folder Path",
   "FORGE_CLEANER.ScenesFolder.Hint": "Folder path for scene images and maps.",
 
+  "FORGE_CLEANER.RecreateAssetsFolders.Name": "Recreate Assets Folder Structure",
+  "FORGE_CLEANER.RecreateAssetsFolders.Hint": "If enabled, asset files (journals, macros) will be organized into subfolders matching the folder structure in Foundry.",
+
+  "FORGE_CLEANER.RecreateTokenFolders.Name": "Recreate Token Folder Structure",
+  "FORGE_CLEANER.RecreateTokenFolders.Hint": "If enabled, token files will be organized into subfolders matching the folder structure in Foundry.",
+
   "FORGE_CLEANER.RecreateSceneFolders.Name": "Recreate Scene Folder Structure",
-  "FORGE_CLEANER.RecreateSceneFolders.Hint": "If enabled, files will be organized into subfolders matching the folder structure in Foundry.",
+  "FORGE_CLEANER.RecreateSceneFolders.Hint": "If enabled, scene files will be organized into subfolders matching the folder structure in Foundry.",
+
+  "FORGE_CLEANER.RecreateAudioFolders.Name": "Recreate Audio Folder Structure",
+  "FORGE_CLEANER.RecreateAudioFolders.Hint": "If enabled, audio files will be organized into subfolders matching the playlist folder structure in Foundry.",
+
+  "FORGE_CLEANER.RecreateItemsFolders.Name": "Recreate Items Folder Structure",
+  "FORGE_CLEANER.RecreateItemsFolders.Hint": "If enabled, item files will be organized into subfolders matching the folder structure in Foundry.",
 
   "FORGE_CLEANER.AudioFolder.Name": "Audio Folder Path",
   "FORGE_CLEANER.AudioFolder.Hint": "Folder path for audio files (playlist sounds, ambient sounds, etc.).",

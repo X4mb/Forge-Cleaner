@@ -39,8 +39,8 @@ function registerForgeCleanerSettings() {
   game.settings.register('forge-cleaner', 'npcTokenFolder', {
     name: game.i18n.localize('FORGE_CLEANER.NPCTokenFolder.Name'),
     hint: game.i18n.localize('FORGE_CLEANER.NPCTokenFolder.Hint'),
-    scope: 'world',
-    config: true,
+      scope: 'world',
+      config: true,
     type: String,
     default: 'tokens/npc',
   });
@@ -49,9 +49,9 @@ function registerForgeCleanerSettings() {
   game.settings.register('forge-cleaner', 'playerTokenFolder', {
     name: game.i18n.localize('FORGE_CLEANER.PlayerTokenFolder.Name'),
     hint: game.i18n.localize('FORGE_CLEANER.PlayerTokenFolder.Hint'),
-    scope: 'world',
-    config: true,
-    type: String,
+      scope: 'world',
+      config: true,
+      type: String,
     default: 'tokens/player',
   });
 
@@ -65,10 +65,46 @@ function registerForgeCleanerSettings() {
     default: 'scenes',
   });
 
-  // Recreate scene folder structure
+  // Recreate folder structure for different document types
+  game.settings.register('forge-cleaner', 'recreateAssetsFolders', {
+    name: game.i18n.localize('FORGE_CLEANER.RecreateAssetsFolders.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.RecreateAssetsFolders.Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
+  game.settings.register('forge-cleaner', 'recreateTokenFolders', {
+    name: game.i18n.localize('FORGE_CLEANER.RecreateTokenFolders.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.RecreateTokenFolders.Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.register('forge-cleaner', 'recreateSceneFolders', {
     name: game.i18n.localize('FORGE_CLEANER.RecreateSceneFolders.Name'),
     hint: game.i18n.localize('FORGE_CLEANER.RecreateSceneFolders.Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
+  game.settings.register('forge-cleaner', 'recreateAudioFolders', {
+    name: game.i18n.localize('FORGE_CLEANER.RecreateAudioFolders.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.RecreateAudioFolders.Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
+  game.settings.register('forge-cleaner', 'recreateItemsFolders', {
+    name: game.i18n.localize('FORGE_CLEANER.RecreateItemsFolders.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.RecreateItemsFolders.Hint'),
     scope: 'world',
     config: true,
     type: Boolean,
@@ -208,9 +244,13 @@ function getOrganizationConfig() {
     npcTokenFolder: game.settings.get('forge-cleaner', 'npcTokenFolder'),
     playerTokenFolder: game.settings.get('forge-cleaner', 'playerTokenFolder'),
     scenesFolder: game.settings.get('forge-cleaner', 'scenesFolder'),
-    recreateSceneFolders: game.settings.get('forge-cleaner', 'recreateSceneFolders'),
     audioFolder: game.settings.get('forge-cleaner', 'audioFolder'),
     itemsFolder: game.settings.get('forge-cleaner', 'itemsFolder'),
+    recreateAssetsFolders: game.settings.get('forge-cleaner', 'recreateAssetsFolders'),
+    recreateTokenFolders: game.settings.get('forge-cleaner', 'recreateTokenFolders'),
+    recreateSceneFolders: game.settings.get('forge-cleaner', 'recreateSceneFolders'),
+    recreateAudioFolders: game.settings.get('forge-cleaner', 'recreateAudioFolders'),
+    recreateItemsFolders: game.settings.get('forge-cleaner', 'recreateItemsFolders'),
   };
 }
 
@@ -222,12 +262,12 @@ function getOrganizationConfig() {
 function generateOrganizationSummary(config) {
   return `
     <ul style="margin: 10px 0; padding-left: 20px;">
-      <li><strong>Assets:</strong> ${config.assetsFolder}</li>
-      <li><strong>NPC Tokens:</strong> ${config.npcTokenFolder}</li>
-      <li><strong>Player Tokens:</strong> ${config.playerTokenFolder}</li>
+      <li><strong>Assets:</strong> ${config.assetsFolder}${config.recreateAssetsFolders ? ' (recreate folders)' : ''}</li>
+      <li><strong>NPC Tokens:</strong> ${config.npcTokenFolder}${config.recreateTokenFolders ? ' (recreate folders)' : ''}</li>
+      <li><strong>Player Tokens:</strong> ${config.playerTokenFolder}${config.recreateTokenFolders ? ' (recreate folders)' : ''}</li>
       <li><strong>Scenes:</strong> ${config.scenesFolder}${config.recreateSceneFolders ? ' (recreate folders)' : ''}</li>
-      <li><strong>Audio:</strong> ${config.audioFolder}</li>
-      <li><strong>Items:</strong> ${config.itemsFolder}</li>
+      <li><strong>Audio:</strong> ${config.audioFolder}${config.recreateAudioFolders ? ' (recreate folders)' : ''}</li>
+      <li><strong>Items:</strong> ${config.itemsFolder}${config.recreateItemsFolders ? ' (recreate folders)' : ''}</li>
     </ul>
   `;
 }
@@ -293,9 +333,17 @@ async function organizeActors(config, results) {
   for (const actor of actors) {
     if (!actor.img || actor.img === 'icons/svg/mystery-man.svg') continue;
 
-    const targetFolder = actor.type === 'character' 
+    let targetFolder = actor.type === 'character' 
       ? config.playerTokenFolder 
       : config.npcTokenFolder;
+
+    // If recreate folders is enabled and actor has a folder
+    if (config.recreateTokenFolders && actor.folder) {
+      const folder = game.folders.get(actor.folder);
+      if (folder) {
+        targetFolder = `${targetFolder}/${folder.name}`;
+      }
+    }
 
     try {
       await moveFileAndUpdateReference(actor.img, targetFolder, actor, 'img', results);
@@ -349,8 +397,18 @@ async function organizeItems(config, results) {
   for (const item of items) {
     if (!item.img || item.img === 'icons/svg/item-bag.svg') continue;
 
+    let targetFolder = config.itemsFolder;
+
+    // If recreate folders is enabled and item has a folder
+    if (config.recreateItemsFolders && item.folder) {
+      const folder = game.folders.get(item.folder);
+      if (folder) {
+        targetFolder = `${config.itemsFolder}/${folder.name}`;
+      }
+    }
+
     try {
-      await moveFileAndUpdateReference(item.img, config.itemsFolder, item, 'img', results);
+      await moveFileAndUpdateReference(item.img, targetFolder, item, 'img', results);
     } catch (error) {
       forgeCleanerLog(`Failed to organize item ${item.name}:`, error);
       results.failed.push({ type: 'Item', name: item.name, file: item.img, error: error.message });
@@ -372,9 +430,19 @@ async function organizeAudio(config, results) {
     for (const sound of sounds) {
       if (!sound.path) continue;
 
+      let targetFolder = config.audioFolder;
+
+      // If recreate folders is enabled and playlist has a folder
+      if (config.recreateAudioFolders && playlist.folder) {
+        const folder = game.folders.get(playlist.folder);
+        if (folder) {
+          targetFolder = `${config.audioFolder}/${folder.name}`;
+        }
+      }
+
       try {
         // For embedded documents, we need to update the parent
-        await moveFileAndUpdateReference(sound.path, config.audioFolder, playlist, sound, results);
+        await moveFileAndUpdateReference(sound.path, targetFolder, playlist, sound, results);
       } catch (error) {
         forgeCleanerLog(`Failed to organize audio ${sound.name}:`, error);
         results.failed.push({ type: 'Audio', name: sound.name, file: sound.path, error: error.message });
@@ -396,8 +464,18 @@ async function organizeAssets(config, results) {
   for (const journal of journals) {
     if (!journal.img) continue;
 
+    let targetFolder = config.assetsFolder;
+
+    // If recreate folders is enabled and journal has a folder
+    if (config.recreateAssetsFolders && journal.folder) {
+      const folder = game.folders.get(journal.folder);
+      if (folder) {
+        targetFolder = `${config.assetsFolder}/${folder.name}`;
+      }
+    }
+
     try {
-      await moveFileAndUpdateReference(journal.img, config.assetsFolder, journal, 'img', results);
+      await moveFileAndUpdateReference(journal.img, targetFolder, journal, 'img', results);
     } catch (error) {
       forgeCleanerLog(`Failed to organize journal ${journal.name}:`, error);
       results.failed.push({ type: 'Journal', name: journal.name, file: journal.img, error: error.message });
@@ -411,8 +489,18 @@ async function organizeAssets(config, results) {
   for (const macro of macros) {
     if (!macro.img) continue;
 
+    let targetFolder = config.assetsFolder;
+
+    // If recreate folders is enabled and macro has a folder
+    if (config.recreateAssetsFolders && macro.folder) {
+      const folder = game.folders.get(macro.folder);
+      if (folder) {
+        targetFolder = `${config.assetsFolder}/${folder.name}`;
+      }
+    }
+
     try {
-      await moveFileAndUpdateReference(macro.img, config.assetsFolder, macro, 'img', results);
+      await moveFileAndUpdateReference(macro.img, targetFolder, macro, 'img', results);
     } catch (error) {
       forgeCleanerLog(`Failed to organize macro ${macro.name}:`, error);
       results.failed.push({ type: 'Macro', name: macro.name, file: macro.img, error: error.message });

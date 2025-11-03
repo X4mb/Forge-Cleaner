@@ -124,10 +124,7 @@ Convert files to optimized formats to reduce world size:
 
 - File conversion to WebP format
 - Audio file optimization
-- Backup creation before operations
-- Batch processing controls
 - Progress indicators
-- Selective folder processing
 
 ## License
 

@@ -2,7 +2,7 @@
   "id": "forge-cleaner",
   "title": "Forge Cleaner",
   "description": "File organization and optimization tool for Foundry VTT worlds.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "authors": [
     { "name": "Xamb", "email": "", "url": "https://github.com/X4mb/Forge-Cleaner" }
   ],
