@@ -36,7 +36,7 @@ class ForgeCleanerApplyOrganizationMenu extends ApplicationV2 {
         cancel: {
           icon: '<i class="fas fa-times"></i>',
           label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Cancel'),
-        }
+        },
       },
       default: 'cancel'
     }).render(true);
@@ -72,7 +72,7 @@ class ForgeCleanerOptimizeFilesMenu extends ApplicationV2 {
         cancel: {
           icon: '<i class="fas fa-times"></i>',
           label: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Cancel'),
-        }
+        },
       },
       default: 'cancel'
     }).render(true);
