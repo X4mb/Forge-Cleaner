@@ -6,8 +6,12 @@
   "authors": [
     { "name": "Xamb", "email": "", "url": "https://github.com/X4mb/Forge-Cleaner" }
   ],
-  "minimumCoreVersion": "13",
+  "minimumCoreVersion": "13.0.0",
   "compatibleCoreVersion": "13",
+  "compatibility": {
+    "minimum": "13.0.0",
+    "verified": "13.0.0"
+  },
   "scripts": ["scripts/forge-cleaner.js"],
   "languages": [
     { "lang": "en", "name": "English", "path": "lang/en.json" }
