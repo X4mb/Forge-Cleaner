@@ -1,147 +1,111 @@
 /**
  * Forge Cleaner - Foundry VTT v13 Module
- * Periodically scans and cleans up unused, orphaned, or redundant data in the active world.
+ * File organization and optimization tool for Foundry VTT worlds.
  * @author Xamb
  * @license MIT
  */
-
-// Import ApplicationV2 for Foundry VTT v13+
-const { ApplicationV2 } = foundry.applications.api;
 
 Hooks.once('init', () => {
   console.log('Forge Cleaner | Initializing module');
   registerForgeCleanerSettings();
 });
 
-Hooks.once('ready', () => {
-  setupForgeCleanerScheduler();
-});
-
 /**
  * Register module settings in the Foundry VTT settings menu.
  */
 function registerForgeCleanerSettings() {
-  // Cleanup categories and their actions
-  const categories = [
-    {
-      key: 'unlinkedTokens',
-      name: game.i18n.localize('FORGE_CLEANER.UnlinkedTokens.Name'),
-      hint: game.i18n.localize('FORGE_CLEANER.UnlinkedTokens.Hint'),
-      defaultEnabled: true,
-      defaultAction: 'flag',
-    },
-    {
-      key: 'orphanedActiveEffects',
-      name: game.i18n.localize('FORGE_CLEANER.OrphanedActiveEffects.Name'),
-      hint: game.i18n.localize('FORGE_CLEANER.OrphanedActiveEffects.Hint'),
-      defaultEnabled: true,
-      defaultAction: 'flag',
-    },
-    {
-      key: 'emptyDocuments',
-      name: game.i18n.localize('FORGE_CLEANER.EmptyDocuments.Name'),
-      hint: game.i18n.localize('FORGE_CLEANER.EmptyDocuments.Hint'),
-      defaultEnabled: true,
-      defaultAction: 'flag',
-    },
-    {
-      key: 'duplicateAssets',
-      name: game.i18n.localize('FORGE_CLEANER.DuplicateAssets.Name'),
-      hint: game.i18n.localize('FORGE_CLEANER.DuplicateAssets.Hint'),
-      defaultEnabled: false,
-      defaultAction: 'flag',
-    },
-    {
-      key: 'oldChatMessages',
-      name: game.i18n.localize('FORGE_CLEANER.OldChatMessages.Name'),
-      hint: game.i18n.localize('FORGE_CLEANER.OldChatMessages.Hint'),
-      defaultEnabled: true,
-      defaultAction: 'archive',
-    },
-  ];
-
-  const actions = {
-    delete: game.i18n.localize('FORGE_CLEANER.Action.Delete'),
-    move: game.i18n.localize('FORGE_CLEANER.Action.Move'),
-    flag: game.i18n.localize('FORGE_CLEANER.Action.Flag'),
-    ignore: game.i18n.localize('FORGE_CLEANER.Action.Ignore'),
-    archive: game.i18n.localize('FORGE_CLEANER.Action.Archive'),
-  };
-
-  // Register settings for each category
-  for (const cat of categories) {
-    game.settings.register('forge-cleaner', `${cat.key}Enabled`, {
-      name: cat.name,
-      hint: cat.hint,
-      scope: 'world',
-      config: true,
-      type: Boolean,
-      default: cat.defaultEnabled,
-    });
-    game.settings.register('forge-cleaner', `${cat.key}Action`, {
-      name: `${cat.name} - ${game.i18n.localize('FORGE_CLEANER.Action')}`,
-      hint: game.i18n.localize('FORGE_CLEANER.Action.Hint'),
-      scope: 'world',
-      config: true,
-      type: String,
-      choices: actions,
-      default: cat.defaultAction,
-    });
-  }
-
-  // Scan frequency (hours)
-  game.settings.register('forge-cleaner', 'scanFrequency', {
-    name: game.i18n.localize('FORGE_CLEANER.ScanFrequency.Name'),
-    hint: game.i18n.localize('FORGE_CLEANER.ScanFrequency.Hint'),
-    scope: 'world',
-    config: true,
-    type: Number,
-    default: 24,
-    range: { min: 1, max: 168, step: 1 },
+  // Section 1: Apply Organization Button
+  game.settings.registerMenu('forge-cleaner', 'applyOrganization', {
+    name: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Name'),
+    label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Label'),
+    hint: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Hint'),
+    icon: 'fas fa-sitemap',
+    type: ForgeCleanerApplyOrganizationMenu,
+    restricted: true,
   });
 
-  // Scan on world load
-  game.settings.register('forge-cleaner', 'scanOnWorldLoad', {
-    name: game.i18n.localize('FORGE_CLEANER.ScanOnWorldLoad.Name'),
-    hint: game.i18n.localize('FORGE_CLEANER.ScanOnWorldLoad.Hint'),
+  // Section 2: Folder Configuration
+  // Assets folder
+  game.settings.register('forge-cleaner', 'assetsFolder', {
+    name: game.i18n.localize('FORGE_CLEANER.AssetsFolder.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.AssetsFolder.Hint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    default: 'assets',
+  });
+
+  // NPC Token Images folder
+  game.settings.register('forge-cleaner', 'npcTokenFolder', {
+    name: game.i18n.localize('FORGE_CLEANER.NPCTokenFolder.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.NPCTokenFolder.Hint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    default: 'tokens/npc',
+  });
+
+  // Player Token Images folder
+  game.settings.register('forge-cleaner', 'playerTokenFolder', {
+    name: game.i18n.localize('FORGE_CLEANER.PlayerTokenFolder.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.PlayerTokenFolder.Hint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    default: 'tokens/player',
+  });
+
+  // Scenes folder
+  game.settings.register('forge-cleaner', 'scenesFolder', {
+    name: game.i18n.localize('FORGE_CLEANER.ScenesFolder.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.ScenesFolder.Hint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    default: 'scenes',
+  });
+
+  // Recreate scene folder structure
+  game.settings.register('forge-cleaner', 'recreateSceneFolders', {
+    name: game.i18n.localize('FORGE_CLEANER.RecreateSceneFolders.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.RecreateSceneFolders.Hint'),
     scope: 'world',
     config: true,
     type: Boolean,
     default: false,
   });
 
-  // Age of chat messages to delete/archive (days)
-  game.settings.register('forge-cleaner', 'chatMessageAge', {
-    name: game.i18n.localize('FORGE_CLEANER.ChatMessageAge.Name'),
-    hint: game.i18n.localize('FORGE_CLEANER.ChatMessageAge.Hint'),
+  // Audio files folder
+  game.settings.register('forge-cleaner', 'audioFolder', {
+    name: game.i18n.localize('FORGE_CLEANER.AudioFolder.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.AudioFolder.Hint'),
     scope: 'world',
     config: true,
-    type: Number,
-    default: 30,
-    range: { min: 1, max: 365, step: 1 },
+    type: String,
+    default: 'audio',
   });
 
-  // Manual scan trigger button (uses a menu setting for button)
-  game.settings.registerMenu('forge-cleaner', 'manualScan', {
-    name: game.i18n.localize('FORGE_CLEANER.ManualScan.Name'),
-    label: game.i18n.localize('FORGE_CLEANER.ManualScan.Label'),
-    hint: game.i18n.localize('FORGE_CLEANER.ManualScan.Hint'),
-    icon: 'fas fa-broom',
-    type: ForgeCleanerManualScanMenu,
+  // Item pictures folder
+  game.settings.register('forge-cleaner', 'itemsFolder', {
+    name: game.i18n.localize('FORGE_CLEANER.ItemsFolder.Name'),
+    hint: game.i18n.localize('FORGE_CLEANER.ItemsFolder.Hint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    default: 'items',
+  });
+
+  // Section 3: File Optimization
+  game.settings.registerMenu('forge-cleaner', 'optimizeFiles', {
+    name: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Name'),
+    label: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Label'),
+    hint: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Hint'),
+    icon: 'fas fa-compress',
+    type: ForgeCleanerOptimizeFilesMenu,
     restricted: true,
   });
 
-  // Review flagged scenes button
-  game.settings.registerMenu('forge-cleaner', 'reviewFlaggedScenes', {
-    name: game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.Name'),
-    label: game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.Label'),
-    hint: game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.Hint'),
-    icon: 'fas fa-eye',
-    type: ForgeCleanerReviewFlaggedScenesMenu,
-    restricted: true,
-  });
-
-  // Debug logging setting
+  // Debug logging
   game.settings.register('forge-cleaner', 'debugLogging', {
     name: game.i18n.localize('FORGE_CLEANER.DebugLogging.Name'),
     hint: game.i18n.localize('FORGE_CLEANER.DebugLogging.Hint'),
@@ -149,44 +113,6 @@ function registerForgeCleanerSettings() {
     config: true,
     type: Boolean,
     default: false,
-  });
-
-  // Archive handling option
-  game.settings.register('forge-cleaner', 'archiveHandling', {
-    name: game.i18n.localize('FORGE_CLEANER.ArchiveHandling.Name'),
-    hint: game.i18n.localize('FORGE_CLEANER.ArchiveHandling.Hint'),
-    scope: 'world',
-    config: true,
-    type: String,
-    choices: {
-      flag: game.i18n.localize('FORGE_CLEANER.ArchiveHandling.Flag'),
-      move: game.i18n.localize('FORGE_CLEANER.ArchiveHandling.Move')
-    },
-    default: 'flag',
-  });
-
-  // Show only confirmation after scan (new setting)
-  game.settings.register('forge-cleaner', 'scanConfirmationOnly', {
-    name: game.i18n.localize('FORGE_CLEANER.ScanConfirmationOnly.Name'),
-    hint: game.i18n.localize('FORGE_CLEANER.ScanConfirmationOnly.Hint'),
-    scope: 'world',
-    config: true,
-    type: Boolean,
-    default: false,
-  });
-
-  // Add empty document strictness setting
-  game.settings.register('forge-cleaner', 'emptyDocumentStrictness', {
-    name: game.i18n.localize('FORGE_CLEANER.EmptyDocumentStrictness.Name'),
-    hint: game.i18n.localize('FORGE_CLEANER.EmptyDocumentStrictness.Hint'),
-    scope: 'world',
-    config: true,
-    type: String,
-    choices: {
-      conservative: game.i18n.localize('FORGE_CLEANER.EmptyDocumentStrictness.Conservative'),
-      strict: game.i18n.localize('FORGE_CLEANER.EmptyDocumentStrictness.Strict')
-    },
-    default: 'conservative',
   });
 }
 
@@ -196,32 +122,37 @@ function forgeCleanerLog(...args) {
   }
 }
 
-// --- ApplicationV2 Migration ---
-class ForgeCleanerManualScanMenu extends ApplicationV2 {
+// --- ApplicationV2 Menus ---
+
+class ForgeCleanerApplyOrganizationMenu extends ApplicationV2 {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
-      id: 'forge-cleaner-manual-scan',
-      title: game.i18n.localize('FORGE_CLEANER.ManualScan.Name'),
-      width: 400,
+      id: 'forge-cleaner-apply-organization',
+      title: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Name'),
+      width: 500,
       height: 'auto',
     });
   }
+
   async render(force, options) {
+    const config = getOrganizationConfig();
+    const summary = generateOrganizationSummary(config);
+
     new Dialog({
-      title: game.i18n.localize('FORGE_CLEANER.ManualScan.ConfirmTitle'),
-      content: `<p>${game.i18n.localize('FORGE_CLEANER.ManualScan.ConfirmPrompt')}</p>`,
+      title: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.ConfirmTitle'),
+      content: `<div>${game.i18n.localize('FORGE_CLEANER.ApplyOrganization.BackupWarning')}<p>${game.i18n.localize('FORGE_CLEANER.ApplyOrganization.ConfirmPrompt')}</p>${summary}</div>`,
       buttons: {
         confirm: {
           icon: '<i class="fas fa-check"></i>',
-          label: game.i18n.localize('FORGE_CLEANER.ManualScan.Confirm'),
+          label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Confirm'),
           callback: async () => {
-            ui.notifications.info(game.i18n.localize('FORGE_CLEANER.ManualScan.Triggered'));
-            await performForgeCleanerScan();
+            ui.notifications.info(game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Started'));
+            await applyOrganization(config);
           }
         },
         cancel: {
           icon: '<i class="fas fa-times"></i>',
-          label: game.i18n.localize('FORGE_CLEANER.ManualScan.Cancel'),
+          label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Cancel'),
         }
       },
       default: 'cancel'
@@ -229,529 +160,378 @@ class ForgeCleanerManualScanMenu extends ApplicationV2 {
   }
 }
 
-class ForgeCleanerReviewFlaggedScenesMenu extends ApplicationV2 {
+class ForgeCleanerOptimizeFilesMenu extends ApplicationV2 {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
-      id: 'forge-cleaner-review-flagged-scenes',
-      title: game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.Name'),
-      width: 600,
+      id: 'forge-cleaner-optimize-files',
+      title: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Name'),
+      width: 500,
       height: 'auto',
     });
   }
+
   async render(force, options) {
-    const flaggedScenes = game.scenes.contents.filter(scene => scene.flags['forge-cleaner']?.flaggedForReview);
-    if (!flaggedScenes.length) {
-      ui.notifications.warn(game.i18n.localize('FORGE_CLEANER.ReviewFlaggedScenes.NoScenes'));
-      return;
-    }
-    const content = flaggedScenes.map(scene => {
-      return `
-        <div class="forge-cleaner-scene-review-item">
-          <h4>${scene.name}</h4>
-          <button class="forge-cleaner-archive-scene" data-scene-id="${scene.id}">${game.i18n.localize('FORGE_CLEANER.Action.Archive')}</button>
-          <button class="forge-cleaner-protect-scene" data-scene-id="${scene.id}">${game.i18n.localize('FORGE_CLEANER.Action.Ignore')}</button>
-        </div>
-      `;
-    }).join('');
-    this.content = `
-      <div class="forge-cleaner-review-flagged-scenes-container">
-        ${content}
-      </div>
-    `;
-    super.render(force, options);
-    this.element.find('.forge-cleaner-archive-scene').on('click', async (event) => {
-      const sceneId = event.currentTarget.dataset.sceneId;
-      const scene = game.scenes.get(sceneId);
-      if (scene) {
-        await this.archiveScene(scene);
-      }
-    });
-    this.element.find('.forge-cleaner-protect-scene').on('click', async (event) => {
-      const sceneId = event.currentTarget.dataset.sceneId;
-      const scene = game.scenes.get(sceneId);
-      if (scene) {
-        await scene.setFlag('forge-cleaner', 'protected', true);
-        await scene.unsetFlag('forge-cleaner', 'flaggedForReview');
-        ui.notifications.info(`${scene.name} protected from future cleanup.`);
-        this.render(true);
-      }
-    });
-  }
-  async archiveScene(scene) {
-    const archiveHandling = game.settings.get('forge-cleaner', 'archiveHandling');
-    if (archiveHandling === 'move') {
-      let archiveFolder = game.folders.find(f => f.type === 'Scene' && f.name === 'Archive');
-      if (!archiveFolder) {
-        archiveFolder = await Folder.create({ name: 'Archive', type: 'Scene', color: '#888888' });
-      }
-      await scene.update({ folder: archiveFolder.id });
-      ui.notifications.info(`${scene.name} moved to Archive folder.`);
-    } else {
-      ui.notifications.info(`${scene.name} flagged as archived.`);
-    }
-    await scene.setFlag('forge-cleaner', 'archived', true);
-    await scene.unsetFlag('forge-cleaner', 'flaggedForReview');
-    this.render(true);
-  }
-}
+    const folders = ['assets', 'tokens', 'scenes', 'audio', 'items'];
+    const summary = `<p><strong>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Summary')}</strong></p><p>${folders.map(f => `- ${f}`).join('<br>')}</p>`;
 
-/**
- * Set up the scheduled scan logic and manual scan trigger.
- */
-function setupForgeCleanerScheduler() {
-  // Only the GM should schedule or run scans
-  if (!game.user?.isGM && typeof game.user !== 'undefined') return;
-
-  // Read settings
-  const scanFrequency = game.settings.get('forge-cleaner', 'scanFrequency') || 24; // hours
-  const scanOnWorldLoad = game.settings.get('forge-cleaner', 'scanOnWorldLoad');
-
-  // Schedule periodic scan
-  if (scanFrequency > 0) {
-    const ms = scanFrequency * 60 * 60 * 1000;
-    setInterval(() => {
-      performForgeCleanerScan();
-    }, ms);
-    console.log(`Forge Cleaner | Scheduled scan every ${scanFrequency} hours.`);
-  }
-
-  // Scan on world load
-  if (scanOnWorldLoad) {
-    performForgeCleanerScan();
-    console.log('Forge Cleaner | Scan triggered on world load.');
-  }
-}
-
-/**
- * Main entry point for performing a scan and cleanup.
- */
-async function performForgeCleanerScan() {
-  forgeCleanerLog('Starting scan...');
-  // Only the GM should run cleanup
-  if (!game.user?.isGM && typeof game.user !== 'undefined') return;
-
-  let summary = [];
-
-  // 1. Unlinked Tokens
-  if (game.settings.get('forge-cleaner', 'unlinkedTokensEnabled')) {
-    const action = game.settings.get('forge-cleaner', 'unlinkedTokensAction');
-    forgeCleanerLog('Scanning for unlinked tokens, action:', action);
-    const result = await cleanupUnlinkedTokens(action);
-    forgeCleanerLog('Unlinked tokens result:', result);
-    if (result && result.length) summary.push(`Unlinked Tokens: ${result.length}`);
-  }
-
-  // 2. Orphaned Active Effects
-  if (game.settings.get('forge-cleaner', 'orphanedActiveEffectsEnabled')) {
-    const action = game.settings.get('forge-cleaner', 'orphanedActiveEffectsAction');
-    forgeCleanerLog('Scanning for orphaned active effects, action:', action);
-    const result = await cleanupOrphanedActiveEffects(action);
-    forgeCleanerLog('Orphaned active effects result:', result);
-    if (result && result.length) summary.push(`Orphaned Effects: ${result.length}`);
-  }
-
-  // 3. Empty Documents
-  if (game.settings.get('forge-cleaner', 'emptyDocumentsEnabled')) {
-    const action = game.settings.get('forge-cleaner', 'emptyDocumentsAction');
-    forgeCleanerLog('Scanning for empty documents, action:', action);
-    const result = await cleanupEmptyDocuments(action);
-    forgeCleanerLog('Empty documents result:', result);
-    if (result && result.length) summary.push(`Empty Documents: ${result.length}`);
-  }
-
-  // 4. Duplicate Assets
-  if (game.settings.get('forge-cleaner', 'duplicateAssetsEnabled')) {
-    const action = game.settings.get('forge-cleaner', 'duplicateAssetsAction');
-    forgeCleanerLog('Scanning for duplicate assets, action:', action);
-    const result = await cleanupDuplicateAssets(action);
-    forgeCleanerLog('Duplicate assets result:', result);
-    if (result && result.length) summary.push(`Duplicate Assets: ${result.length}`);
-  }
-
-  // 5. Old Chat Messages
-  if (game.settings.get('forge-cleaner', 'oldChatMessagesEnabled')) {
-    const action = game.settings.get('forge-cleaner', 'oldChatMessagesAction');
-    const age = game.settings.get('forge-cleaner', 'chatMessageAge');
-    forgeCleanerLog('Scanning for old chat messages, action:', action, 'age:', age);
-    const result = await cleanupOldChatMessages(action, age);
-    forgeCleanerLog('Old chat messages result:', result);
-    if (result && result.length) summary.push(`Old Chat Messages: ${result.length}`);
-  }
-
-  forgeCleanerLog('Scan summary:', summary);
-  // Notify GM
-  const confirmationOnly = game.settings.get('forge-cleaner', 'scanConfirmationOnly');
-  if (confirmationOnly) {
-    sendForgeCleanerSummary(game.i18n.localize('FORGE_CLEANER.ScanConfirmationOnly.Confirmation'));
-  } else if (summary.length) {
-    sendForgeCleanerSummary(`Automated Cleanup: ${summary.join(', ')}.`);
-  } else {
-    sendForgeCleanerSummary(game.i18n.localize('FORGE_CLEANER.ScanConfirmationOnly.Confirmation'));
-  }
-}
-
-// --- Cleanup Routines ---
-
-/**
- * Orphaned Active Effects: Remove effects referencing missing items/sources.
- */
-async function cleanupOrphanedActiveEffects(action) {
-  let affected = [];
-  for (const actor of game.actors?.contents || []) {
-    for (const effect of actor.effects.contents) {
-      // Check if effect references a source (item) that no longer exists
-      const sourceId = effect.origin?.split('.')?.[2];
-      if (sourceId && !game.items.get(sourceId)) {
-        affected.push({ actor, effect });
-      }
-    }
-  }
-  if (!affected.length) return [];
-  switch (action) {
-    case 'delete':
-      for (const { actor, effect } of affected) {
-        await actor.deleteEmbeddedDocuments('ActiveEffect', [effect.id]);
-      }
-      break;
-    case 'move':
-      // Not applicable for effects; flag instead
-      sendForgeCleanerSummary('Move to compendium not supported for effects. Flagging for review.');
-      // fallthrough
-    case 'flag':
-      sendForgeCleanerSummary(`Orphaned Effects found: ${affected.map(a => `${a.actor.name} [${a.effect.label}]`).join(', ')}`);
-      break;
-    case 'ignore':
-    default:
-      break;
-  }
-  return affected;
-}
-
-/**
- * Empty Documents: Remove documents with no content or only default properties.
- */
-async function cleanupEmptyDocuments(action) {
-  let affected = [];
-  // Check Actors, Items, Journals, Macros, Playlists, Tables, Cards, Scenes
-  const types = [
-    { collection: game.actors, type: 'Actor' },
-    { collection: game.items, type: 'Item' },
-    { collection: game.journal, type: 'JournalEntry' },
-    { collection: game.macros, type: 'Macro' },
-    { collection: game.playlists, type: 'Playlist' },
-    { collection: game.tables, type: 'RollTable' },
-    { collection: game.cards, type: 'Cards' },
-    { collection: game.scenes, type: 'Scene' }
-  ];
-  for (const { collection, type } of types) {
-    for (const doc of collection?.contents || []) {
-      // Skip protected scenes
-      if (type === 'Scene' && doc.getFlag && await doc.getFlag('forge-cleaner', 'protected')) continue;
-      if (isEmptyDocument(doc)) {
-        affected.push({ doc, type });
-      }
-    }
-  }
-  if (!affected.length) return [];
-  // Separate scenes from other types
-  const scenes = affected.filter(a => a.type === 'Scene');
-  const others = affected.filter(a => a.type !== 'Scene');
-  // Always flag scenes for review
-  if (scenes.length) {
-    sendForgeCleanerSummary(`Empty Scenes found: ${scenes.map(a => `${a.doc.name}`).join(', ')}`);
-  }
-  // Handle other types as usual
-  switch (action) {
-    case 'delete':
-      for (const { doc, type } of others) {
-        await doc.delete();
-      }
-      break;
-    case 'move':
-      await moveDocumentsToQuarantine(others.map(a => a.doc));
-      break;
-    case 'flag':
-      if (others.length) sendForgeCleanerSummary(`Empty Documents found: ${others.map(a => `${a.type} [${a.doc.name}]`).join(', ')}`);
-      break;
-    case 'ignore':
-    default:
-      break;
-  }
-  return affected;
-}
-
-// --- Improved isEmptyDocument ---
-function isEmptyDocument(doc) {
-  const strictness = game.settings?.get('forge-cleaner', 'emptyDocumentStrictness') || 'conservative';
-  // --- Conservative (default): Only flag if truly empty ---
-  if (strictness === 'conservative') {
-    // Actors: name blank AND no system data AND no effects AND no items
-    if (doc.type === 'Actor') {
-      if (doc.name && doc.name.trim() !== '') return false;
-      if (doc.system && Object.keys(doc.system).some(k => doc.system[k])) return false;
-      if (doc.effects && doc.effects.contents && doc.effects.contents.length > 0) return false;
-      if (doc.items && doc.items.length > 0) return false;
-      return true;
-    }
-    // Items: name blank AND no system data
-    if (doc.type === 'Item') {
-      if (doc.name && doc.name.trim() !== '') return false;
-      if (doc.system && Object.keys(doc.system).some(k => doc.system[k])) return false;
-      return true;
-    }
-    // JournalEntry: name blank AND all pages empty
-    if (doc.type === 'JournalEntry') {
-      if (doc.name && doc.name.trim() !== '') return false;
-      if (doc.pages && doc.pages.size > 0) {
-        for (const page of doc.pages.contents) {
-          if (page.text?.content?.trim()) return false;
+    new Dialog({
+      title: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.ConfirmTitle'),
+      content: `<div>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.BackupWarning')}<p>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.ConfirmPrompt')}</p>${summary}</div>`,
+      buttons: {
+        confirm: {
+          icon: '<i class="fas fa-check"></i>',
+          label: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Confirm'),
+          callback: async () => {
+            ui.notifications.info(game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Started'));
+            await optimizeFiles(folders);
+          }
+        },
+        cancel: {
+          icon: '<i class="fas fa-times"></i>',
+          label: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Cancel'),
         }
-      }
-      return true;
-    }
-    // Macro: name blank AND no command/script
-    if (doc.type === 'Macro') {
-      if (doc.name && doc.name.trim() !== '') return false;
-      if (doc.command && doc.command.trim() !== '') return false;
-      return true;
-    }
-    // Playlist: name blank AND no sounds
-    if (doc.type === 'Playlist') {
-      if (doc.name && doc.name.trim() !== '') return false;
-      if (doc.sounds && doc.sounds.length > 0) return false;
-      return true;
-    }
-    // RollTable: name blank AND no results
-    if (doc.type === 'RollTable') {
-      if (doc.name && doc.name.trim() !== '') return false;
-      if (doc.results && doc.results.length > 0) return false;
-      return true;
-    }
-    // Cards: name blank AND no cards
-    if (doc.type === 'Cards') {
-      if (doc.name && doc.name.trim() !== '') return false;
-      if (doc.cards && doc.cards.length > 0) return false;
-      return true;
-    }
-    // Scene: name blank AND no tokens
-    if (doc.type === 'Scene') {
-      if (doc.name && doc.name.trim() !== '') return false;
-      if (doc.tokens && doc.tokens.contents && doc.tokens.contents.length > 0) return false;
-      return true;
-    }
-    // Fallback: name blank
-    if (!doc.name || doc.name.trim() === '') return true;
-    return false;
+      },
+      default: 'cancel'
+    }).render(true);
   }
-  // --- Strict: Old logic (name blank OR no content) ---
-  // Consider empty if name is blank and no description/content fields
-  if (!doc.name || doc.name.trim() === '') return true;
-  if (doc.data && doc.data.description && doc.data.description.value) {
-    if (doc.data.description.value.trim() !== '') return false;
-  }
-  // For JournalEntry, check pages
-  if (doc.pages && doc.pages.size > 0) {
-    for (const page of doc.pages.contents) {
-      if (page.text?.content?.trim()) return false;
-    }
-    return true;
-  }
-  // For Items, check if any system data is set
-  if (doc.type === 'Item' && doc.system && Object.keys(doc.system).length > 0) {
-    for (const key in doc.system) {
-      if (doc.system[key]) return false;
-    }
-    return true;
-  }
-  // Fallback: if no content fields, consider empty
-  return true;
+}
+
+// --- Core Functionality ---
+
+/**
+ * Get the current organization configuration from settings.
+ * @returns {Object} Configuration object with folder paths
+ */
+function getOrganizationConfig() {
+  return {
+    assetsFolder: game.settings.get('forge-cleaner', 'assetsFolder'),
+    npcTokenFolder: game.settings.get('forge-cleaner', 'npcTokenFolder'),
+    playerTokenFolder: game.settings.get('forge-cleaner', 'playerTokenFolder'),
+    scenesFolder: game.settings.get('forge-cleaner', 'scenesFolder'),
+    recreateSceneFolders: game.settings.get('forge-cleaner', 'recreateSceneFolders'),
+    audioFolder: game.settings.get('forge-cleaner', 'audioFolder'),
+    itemsFolder: game.settings.get('forge-cleaner', 'itemsFolder'),
+  };
 }
 
 /**
- * Duplicate Assets: Find documents referencing the same asset path redundantly.
+ * Generate a summary of the organization configuration.
+ * @param {Object} config - Configuration object
+ * @returns {string} HTML summary
  */
-async function cleanupDuplicateAssets(action) {
-  let affected = [];
-  // Only check image/sound fields for Actors, Items, Journals, Macros, Playlists
-  const assetMap = new Map();
-  const types = [
-    { collection: game.actors, type: 'Actor', field: 'img' },
-    { collection: game.items, type: 'Item', field: 'img' },
-    { collection: game.journal, type: 'JournalEntry', field: 'img' },
-    { collection: game.macros, type: 'Macro', field: 'img' },
-    { collection: game.playlists, type: 'Playlist', field: 'img' }
-  ];
-  for (const { collection, type, field } of types) {
-    for (const doc of collection?.contents || []) {
-      const asset = doc[field];
-      if (asset && asset !== '' && asset !== 'icons/svg/mystery-man.svg') {
-        if (!assetMap.has(asset)) assetMap.set(asset, []);
-        assetMap.get(asset).push({ doc, type });
-      }
-    }
-  }
-  // Find assets referenced by more than one document
-  for (const [asset, docs] of assetMap.entries()) {
-    if (docs.length > 1) {
-      affected.push({ asset, docs });
-    }
-  }
-  if (!affected.length) return [];
-  switch (action) {
-    case 'delete':
-      // Not safe to delete docs just for duplicate asset; flag instead
-      sendForgeCleanerSummary('Delete not supported for duplicate assets. Flagging for review.');
-      // fallthrough
-    case 'move':
-      // Not safe to move; flag instead
-      sendForgeCleanerSummary('Move to compendium not supported for duplicate assets. Flagging for review.');
-      // fallthrough
-    case 'flag':
-      sendForgeCleanerSummary(`Duplicate Assets found: ${affected.map(a => `${a.asset} [${a.docs.map(d => d.doc.name).join(', ')}]`).join('; ')}`);
-      break;
-    case 'ignore':
-    default:
-      break;
-  }
-  return affected;
+function generateOrganizationSummary(config) {
+  return `
+    <ul style="margin: 10px 0; padding-left: 20px;">
+      <li><strong>Assets:</strong> ${config.assetsFolder}</li>
+      <li><strong>NPC Tokens:</strong> ${config.npcTokenFolder}</li>
+      <li><strong>Player Tokens:</strong> ${config.playerTokenFolder}</li>
+      <li><strong>Scenes:</strong> ${config.scenesFolder}${config.recreateSceneFolders ? ' (recreate folders)' : ''}</li>
+      <li><strong>Audio:</strong> ${config.audioFolder}</li>
+      <li><strong>Items:</strong> ${config.itemsFolder}</li>
+    </ul>
+  `;
 }
 
 /**
- * Old Chat Messages: Delete or archive messages older than a threshold (days).
+ * Apply the organization to all files in the world.
+ * @param {Object} config - Configuration object
  */
-async function cleanupOldChatMessages(action, ageDays) {
-  let affected = [];
-  const now = Date.now();
-  const cutoff = now - ageDays * 24 * 60 * 60 * 1000;
-  for (const msg of game.messages?.contents || []) {
-    if (msg.timestamp < cutoff) {
-      affected.push(msg);
+async function applyOrganization(config) {
+  if (!game.user?.isGM) {
+    ui.notifications.error(game.i18n.localize('FORGE_CLEANER.Error.GMOnly'));
+    return;
+  }
+
+  forgeCleanerLog('Starting organization...');
+  const results = {
+    success: 0,
+    failed: [],
+    warnings: []
+  };
+
+  // Organize by document type
+  try {
+    await organizeDocuments(config, results);
+    await sendOrganizationSummary(results);
+  } catch (error) {
+    forgeCleanerLog('Error during organization:', error);
+    ui.notifications.error(game.i18n.localize('FORGE_CLEANER.Error.OrganizationFailed'));
+  }
+}
+
+/**
+ * Organize documents by their type and move files accordingly.
+ * @param {Object} config - Configuration object
+ * @param {Object} results - Results tracking object
+ */
+async function organizeDocuments(config, results) {
+  // Organize Actors (tokens)
+  await organizeActors(config, results);
+
+  // Organize Scenes
+  await organizeScenes(config, results);
+
+  // Organize Items
+  await organizeItems(config, results);
+
+  // Organize Audio Files (Playlists)
+  await organizeAudio(config, results);
+
+  // Organize custom assets (Journal Images, etc.)
+  await organizeAssets(config, results);
+}
+
+/**
+ * Organize Actor/Token images.
+ * @param {Object} config - Configuration object
+ * @param {Object} results - Results tracking object
+ */
+async function organizeActors(config, results) {
+  const actors = game.actors?.contents || [];
+  forgeCleanerLog(`Organizing ${actors.length} actors...`);
+
+  for (const actor of actors) {
+    if (!actor.img || actor.img === 'icons/svg/mystery-man.svg') continue;
+
+    const targetFolder = actor.type === 'character' 
+      ? config.playerTokenFolder 
+      : config.npcTokenFolder;
+
+    try {
+      await moveFileAndUpdateReference(actor.img, targetFolder, actor, 'img', results);
+    } catch (error) {
+      forgeCleanerLog(`Failed to organize actor ${actor.name}:`, error);
+      results.failed.push({ type: 'Actor', name: actor.name, file: actor.img, error: error.message });
     }
   }
-  if (!affected.length) return [];
-  switch (action) {
-    case 'delete':
-      for (const msg of affected) {
-        await msg.delete();
-      }
-      break;
-    case 'archive':
-      await archiveChatMessages(affected);
-      for (const msg of affected) {
-        await msg.delete();
-      }
-      break;
-    case 'move':
-      // Not applicable; flag instead
-      sendForgeCleanerSummary('Move to compendium not supported for chat messages. Archiving or deleting instead.');
-      break;
-    case 'flag':
-      sendForgeCleanerSummary(`Old Chat Messages found: ${affected.length}`);
-      break;
-    case 'ignore':
-    default:
-      break;
-  }
-  return affected;
 }
 
 /**
- * Archive chat messages into a single Journal Entry.
+ * Organize Scene images and maps.
+ * @param {Object} config - Configuration object
+ * @param {Object} results - Results tracking object
  */
-async function archiveChatMessages(messages) {
-  if (!messages.length) return;
-  // Create or find a Journal Entry for archived chat
-  let journal = game.journal.contents.find(j => j.name === 'Forge Cleaner Chat Archive');
-  if (!journal) {
-    journal = await JournalEntry.create({ name: 'Forge Cleaner Chat Archive', content: '' });
+async function organizeScenes(config, results) {
+  const scenes = game.scenes?.contents || [];
+  forgeCleanerLog(`Organizing ${scenes.length} scenes...`);
+
+  for (const scene of scenes) {
+    if (!scene.img) continue;
+
+    let targetFolder = config.scenesFolder;
+    
+    // If recreate folders is enabled and scene has a folder
+    if (config.recreateSceneFolders && scene.folder) {
+      const folder = game.folders.get(scene.folder);
+      if (folder) {
+        targetFolder = `${config.scenesFolder}/${folder.name}`;
+      }
+    }
+
+    try {
+      await moveFileAndUpdateReference(scene.img, targetFolder, scene, 'img', results);
+    } catch (error) {
+      forgeCleanerLog(`Failed to organize scene ${scene.name}:`, error);
+      results.failed.push({ type: 'Scene', name: scene.name, file: scene.img, error: error.message });
+    }
   }
-  // Append messages to the journal
-  let content = journal.content || '';
-  for (const msg of messages) {
-    content += `<p><b>${msg.user?.name || 'User'}:</b> ${msg.content}</p>`;
-  }
-  await journal.update({ content });
 }
 
 /**
- * Move documents to the quarantine compendium.
+ * Organize Item images.
+ * @param {Object} config - Configuration object
+ * @param {Object} results - Results tracking object
  */
-async function moveDocumentsToQuarantine(docs) {
-  // Find or create the quarantine compendium
-  let pack = game.packs.get('forge-cleaner.forge-cleaner-quarantine');
-  if (!pack) {
-    pack = await CompendiumCollection.createCompendium({
-      entity: docs[0]?.documentName || 'Actor',
-      label: 'Forge Cleaner Quarantine',
-      name: 'forge-cleaner-quarantine',
-      package: 'forge-cleaner'
+async function organizeItems(config, results) {
+  const items = game.items?.contents || [];
+  forgeCleanerLog(`Organizing ${items.length} items...`);
+
+  for (const item of items) {
+    if (!item.img || item.img === 'icons/svg/item-bag.svg') continue;
+
+    try {
+      await moveFileAndUpdateReference(item.img, config.itemsFolder, item, 'img', results);
+    } catch (error) {
+      forgeCleanerLog(`Failed to organize item ${item.name}:`, error);
+      results.failed.push({ type: 'Item', name: item.name, file: item.img, error: error.message });
+    }
+  }
+}
+
+/**
+ * Organize Audio files from Playlists.
+ * @param {Object} config - Configuration object
+ * @param {Object} results - Results tracking object
+ */
+async function organizeAudio(config, results) {
+  const playlists = game.playlists?.contents || [];
+  forgeCleanerLog(`Organizing ${playlists.length} playlists...`);
+
+  for (const playlist of playlists) {
+    const sounds = playlist.sounds?.contents || [];
+    for (const sound of sounds) {
+      if (!sound.path) continue;
+
+      try {
+        // For embedded documents, we need to update the parent
+        await moveFileAndUpdateReference(sound.path, config.audioFolder, playlist, sound, results);
+      } catch (error) {
+        forgeCleanerLog(`Failed to organize audio ${sound.name}:`, error);
+        results.failed.push({ type: 'Audio', name: sound.name, file: sound.path, error: error.message });
+      }
+    }
+  }
+}
+
+/**
+ * Organize custom assets (Journal Entry images, etc.).
+ * @param {Object} config - Configuration object
+ * @param {Object} results - Results tracking object
+ */
+async function organizeAssets(config, results) {
+  // Journal Entry images
+  const journals = game.journal?.contents || [];
+  forgeCleanerLog(`Organizing ${journals.length} journal entries...`);
+
+  for (const journal of journals) {
+    if (!journal.img) continue;
+
+    try {
+      await moveFileAndUpdateReference(journal.img, config.assetsFolder, journal, 'img', results);
+    } catch (error) {
+      forgeCleanerLog(`Failed to organize journal ${journal.name}:`, error);
+      results.failed.push({ type: 'Journal', name: journal.name, file: journal.img, error: error.message });
+    }
+  }
+
+  // Macro images
+  const macros = game.macros?.contents || [];
+  forgeCleanerLog(`Organizing ${macros.length} macros...`);
+
+  for (const macro of macros) {
+    if (!macro.img) continue;
+
+    try {
+      await moveFileAndUpdateReference(macro.img, config.assetsFolder, macro, 'img', results);
+    } catch (error) {
+      forgeCleanerLog(`Failed to organize macro ${macro.name}:`, error);
+      results.failed.push({ type: 'Macro', name: macro.name, file: macro.img, error: error.message });
+    }
+  }
+}
+
+/**
+ * Move a file to a new location and update the reference in the document.
+ * If updating fails, the operation is logged but not rolled back (as the file is already uploaded).
+ * @param {string} filePath - Current file path
+ * @param {string} targetFolder - Target folder path
+ * @param {Document} document - Document to update
+ * @param {string|Object} field - Field name or embedded document
+ * @param {Object} results - Results tracking object
+ */
+async function moveFileAndUpdateReference(filePath, targetFolder, document, field, results) {
+  // Handle embedded document updates (for playlist sounds)
+  const isEmbeddedUpdate = typeof field === 'object';
+  const embeddedDoc = isEmbeddedUpdate ? field : null;
+  const fieldName = isEmbeddedUpdate ? 'path' : field;
+
+  // Check if file is already in the target folder
+  const normalizedPath = filePath.replace(/^\/+/, ''); // Remove leading slashes
+  const targetFolderNorm = targetFolder.replace(/^\/+/, '').replace(/\/+$/, '');
+  
+  if (normalizedPath.startsWith(targetFolderNorm)) {
+    forgeCleanerLog(`File already in target folder: ${filePath}`);
+    return;
+  }
+
+  // Construct new path
+  const fileName = normalizedPath.split('/').pop();
+  const newPath = `${targetFolderNorm}/${fileName}`;
+
+  // Move the file using Foundry's file API
+  try {
+    forgeCleanerLog(`Moving ${filePath} to ${newPath}`);
+    
+    // Get the full URL for the file (construct Foundry data URL)
+    const fileUrl = `/assets/data/${filePath}`;
+    const response = await fetch(fileUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file: ${response.statusText}`);
+    }
+
+    const fileData = await response.blob();
+    
+    // Upload to new location - FilePicker.upload returns the path directly
+    const uploadResult = await FilePicker.upload('data', newPath, fileData, {});
+    
+    if (!uploadResult || uploadResult.path === undefined) {
+      throw new Error('Failed to upload file to new location');
+    }
+
+    const actualNewPath = uploadResult.path;
+
+    // Update the document with new path
+    if (isEmbeddedUpdate) {
+      // Update embedded document
+      await document.updateEmbeddedDocuments('PlaylistSound', [{
+        _id: embeddedDoc.id,
+        path: actualNewPath
+      }]);
+    } else {
+      // Update regular field
+      const updateData = { [fieldName]: actualNewPath };
+      await document.update(updateData);
+    }
+    
+    results.success++;
+    forgeCleanerLog(`Successfully moved and updated: ${filePath} -> ${actualNewPath}`);
+  } catch (error) {
+    forgeCleanerLog(`Failed to move file:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Optimize files by converting to webp format.
+ * @param {Array<string>} folders - List of folders to optimize
+ */
+async function optimizeFiles(folders) {
+  if (!game.user?.isGM) {
+    ui.notifications.error(game.i18n.localize('FORGE_CLEANER.Error.GMOnly'));
+    return;
+  }
+
+  forgeCleanerLog('Starting file optimization...');
+  
+  // Note: File conversion is complex and requires backend processing
+  // This is a placeholder for the actual implementation
+  ui.notifications.warn(game.i18n.localize('FORGE_CLEANER.OptimizeFiles.NotImplemented'));
+}
+
+/**
+ * Send a summary of the organization results to the GM.
+ * @param {Object} results - Results tracking object
+ */
+async function sendOrganizationSummary(results) {
+  let message = `<strong>Forge Cleaner Organization Complete</strong><br>`;
+  message += `${game.i18n.localize('FORGE_CLEANER.Summary.Success')}: ${results.success}<br>`;
+
+  if (results.failed.length > 0) {
+    message += `<br><strong>${game.i18n.localize('FORGE_CLEANER.Summary.Failed')}:</strong><br>`;
+    results.failed.forEach(item => {
+      message += `- ${item.type}: ${item.name} - ${item.error}<br>`;
     });
   }
-  for (const doc of docs) {
-    await pack.importDocument(doc);
-    await doc.delete();
-  }
-}
 
-/**
- * Find and handle tokens on all scenes that reference missing actors.
- * @param {string} action - The configured action for this category.
- * @returns {Promise<Array>} - List of affected tokens.
- */
-async function cleanupUnlinkedTokens(action) {
-  let affected = [];
-  for (const scene of game.scenes?.contents || []) {
-    for (const token of scene.tokens.contents) {
-      if (token.actorId && !game.actors.get(token.actorId)) {
-        affected.push({ scene, token });
-      }
-    }
-  }
-  if (!affected.length) return [];
-
-  switch (action) {
-    case 'delete':
-      for (const { scene, token } of affected) {
-        await scene.deleteEmbeddedDocuments('Token', [token.id]);
-      }
-      break;
-    case 'move':
-      // Not applicable for tokens; flag instead
-      sendForgeCleanerSummary('Move to compendium not supported for tokens. Flagging for review.');
-      // fallthrough
-    case 'flag':
-      sendForgeCleanerSummary(`Unlinked Tokens found: ${affected.map(a => `${a.scene.name} [${a.token.name}]`).join(', ')}`);
-      break;
-    case 'ignore':
-    default:
-      // Do nothing
-      break;
-  }
-  return affected;
-}
-
-/**
- * Send a private chat message to the GM summarizing actions taken.
- * @param {string} message
- */
-function sendForgeCleanerSummary(message) {
-  // In Foundry, use ChatMessage.create with whisper to GM
-  if (typeof ChatMessage !== 'undefined') {
-    ChatMessage.create({ content: message, whisper: [game.user.id] });
-  } else {
-    // Fallback for test environment
-    console.log(`[Forge Cleaner] ${message}`);
-  }
+  ChatMessage.create({
+    content: message,
+    whisper: [game.user.id]
+  });
 }
 
 module.exports = {
-  performForgeCleanerScan,
-  cleanupUnlinkedTokens,
-  cleanupOrphanedActiveEffects,
-  cleanupEmptyDocuments,
-  cleanupDuplicateAssets,
-  cleanupOldChatMessages,
-  archiveChatMessages,
-  moveDocumentsToQuarantine,
-  isEmptyDocument
-}; 
+  applyOrganization,
+  optimizeFiles,
+  getOrganizationConfig,
+};

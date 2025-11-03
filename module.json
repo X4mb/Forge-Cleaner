@@ -1,8 +1,8 @@
 {
   "id": "forge-cleaner",
   "title": "Forge Cleaner",
-  "description": "Periodically scans and cleans up unused, orphaned, or redundant data in the active Foundry VTT world to optimize performance and data hygiene.",
-  "version": "1.0.9",
+  "description": "File organization and optimization tool for Foundry VTT worlds.",
+  "version": "0.0.1",
   "authors": [
     { "name": "Xamb", "email": "", "url": "https://github.com/X4mb/Forge-Cleaner" }
   ],
@@ -11,14 +11,6 @@
   "scripts": ["scripts/forge-cleaner.js"],
   "languages": [
     { "lang": "en", "name": "English", "path": "lang/en.json" }
-  ],
-  "packs": [
-    {
-      "name": "forge-cleaner-quarantine",
-      "label": "Forge Cleaner Quarantine",
-      "path": "packs/forge-cleaner-quarantine.db",
-      "type": "JournalEntry"
-    }
   ],
   "license": "MIT",
   "readme": "README.md",
