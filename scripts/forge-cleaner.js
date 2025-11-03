@@ -83,7 +83,13 @@ class ForgeCleanerOptimizeFilesMenu extends ApplicationV2 {
 
 Hooks.once('init', () => {
   console.log('Forge Cleaner | Initializing module');
-  registerForgeCleanerSettings();
+  try {
+    registerForgeCleanerSettings();
+    console.log('Forge Cleaner | Settings registered successfully');
+  } catch (error) {
+    console.error('Forge Cleaner | Error registering settings:', error);
+    ui.notifications?.error(`Forge Cleaner failed to initialize: ${error.message}`);
+  }
 });
 
 /**
@@ -91,15 +97,27 @@ Hooks.once('init', () => {
  * Registers all configuration settings, folder paths, and menu buttons.
  */
 function registerForgeCleanerSettings() {
+  if (!game.settings) {
+    throw new Error('game.settings is not available');
+  }
+  if (!game.i18n) {
+    throw new Error('game.i18n is not available');
+  }
+
   // Section 1: Apply Organization Button
-  game.settings.registerMenu('forge-cleaner', 'applyOrganization', {
-    name: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Name'),
-    label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Label'),
-    hint: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Hint'),
-    icon: 'fas fa-sitemap',
-    type: ForgeCleanerApplyOrganizationMenu,
-    restricted: true,
-  });
+  try {
+    game.settings.registerMenu('forge-cleaner', 'applyOrganization', {
+      name: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Name'),
+      label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Label'),
+      hint: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Hint'),
+      icon: 'fas fa-sitemap',
+      type: ForgeCleanerApplyOrganizationMenu,
+      restricted: true,
+    });
+  } catch (error) {
+    console.error('Forge Cleaner | Error registering applyOrganization menu:', error);
+    throw error;
+  }
 
   // Section 2: Folder Configuration
   // Assets folder
