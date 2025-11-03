@@ -5,6 +5,82 @@
  * @license MIT
  */
 
+// --- ApplicationV2 Menus --- (Must be defined before settings registration)
+
+class ForgeCleanerApplyOrganizationMenu extends ApplicationV2 {
+  static get defaultOptions() {
+    return foundry.utils.mergeObject(super.defaultOptions, {
+      id: 'forge-cleaner-apply-organization',
+      title: game.i18n?.localize('FORGE_CLEANER.ApplyOrganization.Name') || 'Apply Organization',
+      width: 500,
+      height: 'auto',
+    });
+  }
+
+  async render(force, options) {
+    const config = getOrganizationConfig();
+    const summary = generateOrganizationSummary(config);
+
+    new Dialog({
+      title: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.ConfirmTitle'),
+      content: `<div>${game.i18n.localize('FORGE_CLEANER.ApplyOrganization.BackupWarning')}<p>${game.i18n.localize('FORGE_CLEANER.ApplyOrganization.ConfirmPrompt')}</p>${summary}</div>`,
+      buttons: {
+        confirm: {
+          icon: '<i class="fas fa-check"></i>',
+          label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Confirm'),
+          callback: async () => {
+            ui.notifications.info(game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Started'));
+            await applyOrganization(config);
+          }
+        },
+        cancel: {
+          icon: '<i class="fas fa-times"></i>',
+          label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Cancel'),
+        }
+      },
+      default: 'cancel'
+    }).render(true);
+  }
+}
+
+class ForgeCleanerOptimizeFilesMenu extends ApplicationV2 {
+  static get defaultOptions() {
+    return foundry.utils.mergeObject(super.defaultOptions, {
+      id: 'forge-cleaner-optimize-files',
+      title: game.i18n?.localize('FORGE_CLEANER.OptimizeFiles.Name') || 'Optimize Files',
+      width: 500,
+      height: 'auto',
+    });
+  }
+
+  async render(force, options) {
+    const folders = ['assets', 'tokens', 'scenes', 'audio', 'items'];
+    const summary = `<p><strong>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Summary')}</strong></p><p>${folders.map(f => `- ${f}`).join('<br>')}</p>`;
+
+    new Dialog({
+      title: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.ConfirmTitle'),
+      content: `<div>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.BackupWarning')}<p>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.ConfirmPrompt')}</p>${summary}</div>`,
+      buttons: {
+        confirm: {
+          icon: '<i class="fas fa-check"></i>',
+          label: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Confirm'),
+          callback: async () => {
+            ui.notifications.info(game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Started'));
+            await optimizeFiles(folders);
+          }
+        },
+        cancel: {
+          icon: '<i class="fas fa-times"></i>',
+          label: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Cancel'),
+        }
+      },
+      default: 'cancel'
+    }).render(true);
+  }
+}
+
+// --- Initialization ---
+
 Hooks.once('init', () => {
   console.log('Forge Cleaner | Initializing module');
   registerForgeCleanerSettings();
@@ -155,80 +231,6 @@ function registerForgeCleanerSettings() {
 function forgeCleanerLog(...args) {
   if (game.settings?.get('forge-cleaner', 'debugLogging')) {
     console.log('[Forge Cleaner]', ...args);
-  }
-}
-
-// --- ApplicationV2 Menus ---
-
-class ForgeCleanerApplyOrganizationMenu extends ApplicationV2 {
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: 'forge-cleaner-apply-organization',
-      title: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Name'),
-      width: 500,
-      height: 'auto',
-    });
-  }
-
-  async render(force, options) {
-    const config = getOrganizationConfig();
-    const summary = generateOrganizationSummary(config);
-
-    new Dialog({
-      title: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.ConfirmTitle'),
-      content: `<div>${game.i18n.localize('FORGE_CLEANER.ApplyOrganization.BackupWarning')}<p>${game.i18n.localize('FORGE_CLEANER.ApplyOrganization.ConfirmPrompt')}</p>${summary}</div>`,
-      buttons: {
-        confirm: {
-          icon: '<i class="fas fa-check"></i>',
-          label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Confirm'),
-          callback: async () => {
-            ui.notifications.info(game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Started'));
-            await applyOrganization(config);
-          }
-        },
-        cancel: {
-          icon: '<i class="fas fa-times"></i>',
-          label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Cancel'),
-        }
-      },
-      default: 'cancel'
-    }).render(true);
-  }
-}
-
-class ForgeCleanerOptimizeFilesMenu extends ApplicationV2 {
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: 'forge-cleaner-optimize-files',
-      title: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Name'),
-      width: 500,
-      height: 'auto',
-    });
-  }
-
-  async render(force, options) {
-    const folders = ['assets', 'tokens', 'scenes', 'audio', 'items'];
-    const summary = `<p><strong>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Summary')}</strong></p><p>${folders.map(f => `- ${f}`).join('<br>')}</p>`;
-
-    new Dialog({
-      title: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.ConfirmTitle'),
-      content: `<div>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.BackupWarning')}<p>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.ConfirmPrompt')}</p>${summary}</div>`,
-      buttons: {
-        confirm: {
-          icon: '<i class="fas fa-check"></i>',
-          label: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Confirm'),
-          callback: async () => {
-            ui.notifications.info(game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Started'));
-            await optimizeFiles(folders);
-          }
-        },
-        cancel: {
-          icon: '<i class="fas fa-times"></i>',
-          label: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Cancel'),
-        }
-      },
-      default: 'cancel'
-    }).render(true);
   }
 }
 
