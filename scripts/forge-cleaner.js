@@ -39,8 +39,8 @@ function registerForgeCleanerSettings() {
   game.settings.register('forge-cleaner', 'npcTokenFolder', {
     name: game.i18n.localize('FORGE_CLEANER.NPCTokenFolder.Name'),
     hint: game.i18n.localize('FORGE_CLEANER.NPCTokenFolder.Hint'),
-      scope: 'world',
-      config: true,
+    scope: 'world',
+    config: true,
     type: String,
     default: 'tokens/npc',
   });
@@ -49,9 +49,9 @@ function registerForgeCleanerSettings() {
   game.settings.register('forge-cleaner', 'playerTokenFolder', {
     name: game.i18n.localize('FORGE_CLEANER.PlayerTokenFolder.Name'),
     hint: game.i18n.localize('FORGE_CLEANER.PlayerTokenFolder.Hint'),
-      scope: 'world',
-      config: true,
-      type: String,
+    scope: 'world',
+    config: true,
+    type: String,
     default: 'tokens/player',
   });
 
@@ -509,8 +509,33 @@ async function organizeAssets(config, results) {
 }
 
 /**
+ * Normalize a file path by removing leading slashes and handling data/ prefix.
+ * @param {string} path - File path to normalize
+ * @returns {string} Normalized path
+ */
+function normalizeFilePath(path) {
+  if (!path) return '';
+  // Remove leading slashes
+  let normalized = path.replace(/^\/+/, '');
+  // Remove data/ prefix if present (FilePicker handles this)
+  normalized = normalized.replace(/^data\//, '');
+  return normalized;
+}
+
+/**
+ * Normalize a folder path by removing leading/trailing slashes.
+ * @param {string} path - Folder path to normalize
+ * @returns {string} Normalized path
+ */
+function normalizeFolderPath(path) {
+  if (!path) return '';
+  // Remove leading and trailing slashes
+  return path.replace(/^\/+/, '').replace(/\/+$/, '');
+}
+
+/**
  * Move a file to a new location and update the reference in the document.
- * If updating fails, the operation is logged but not rolled back (as the file is already uploaded).
+ * Includes rollback on failure and deletes original file after success.
  * @param {string} filePath - Current file path
  * @param {string} targetFolder - Target folder path
  * @param {Document} document - Document to update
@@ -523,11 +548,16 @@ async function moveFileAndUpdateReference(filePath, targetFolder, document, fiel
   const embeddedDoc = isEmbeddedUpdate ? field : null;
   const fieldName = isEmbeddedUpdate ? 'path' : field;
 
-  // Check if file is already in the target folder
-  const normalizedPath = filePath.replace(/^\/+/, ''); // Remove leading slashes
-  const targetFolderNorm = targetFolder.replace(/^\/+/, '').replace(/\/+$/, '');
+  // Normalize paths
+  const normalizedPath = normalizeFilePath(filePath);
+  const targetFolderNorm = normalizeFolderPath(targetFolder);
   
-  if (normalizedPath.startsWith(targetFolderNorm)) {
+  if (!normalizedPath || !targetFolderNorm) {
+    throw new Error('Invalid file path or target folder');
+  }
+
+  // Check if file is already in the target folder
+  if (normalizedPath.startsWith(targetFolderNorm + '/') || normalizedPath === targetFolderNorm) {
     forgeCleanerLog(`File already in target folder: ${filePath}`);
     return;
   }
@@ -535,13 +565,19 @@ async function moveFileAndUpdateReference(filePath, targetFolder, document, fiel
   // Construct new path
   const fileName = normalizedPath.split('/').pop();
   const newPath = `${targetFolderNorm}/${fileName}`;
+  const originalPath = normalizedPath;
+
+  let uploadedFilePath = null;
 
   // Move the file using Foundry's file API
   try {
     forgeCleanerLog(`Moving ${filePath} to ${newPath}`);
     
-    // Get the full URL for the file (construct Foundry data URL)
-    const fileUrl = `/assets/data/${filePath}`;
+    // Get the file using Foundry's asset URL
+    // File paths in Foundry documents are relative to data root (without leading slash or assets/ prefix)
+    // Foundry serves files from /assets/ path
+    // Construct the URL by prepending /assets/ to the normalized path
+    const fileUrl = `/assets/${normalizedPath}`;
     const response = await fetch(fileUrl);
     
     if (!response.ok) {
@@ -550,30 +586,60 @@ async function moveFileAndUpdateReference(filePath, targetFolder, document, fiel
 
     const fileData = await response.blob();
     
-    // Upload to new location - FilePicker.upload returns the path directly
+    // Upload to new location
+    // FilePicker.upload(source, targetPath, file, options)
     const uploadResult = await FilePicker.upload('data', newPath, fileData, {});
     
-    if (!uploadResult || uploadResult.path === undefined) {
+    if (!uploadResult || !uploadResult.path) {
       throw new Error('Failed to upload file to new location');
     }
 
-    const actualNewPath = uploadResult.path;
+    uploadedFilePath = uploadResult.path;
+    forgeCleanerLog(`File uploaded to: ${uploadedFilePath}`);
 
     // Update the document with new path
-    if (isEmbeddedUpdate) {
-      // Update embedded document
-      await document.updateEmbeddedDocuments('PlaylistSound', [{
-        _id: embeddedDoc.id,
-        path: actualNewPath
-      }]);
-    } else {
-      // Update regular field
-      const updateData = { [fieldName]: actualNewPath };
-      await document.update(updateData);
+    try {
+      if (isEmbeddedUpdate) {
+        // Update embedded document
+        await document.updateEmbeddedDocuments('PlaylistSound', [{
+          _id: embeddedDoc.id,
+          path: uploadedFilePath,
+        }]);
+      } else {
+        // Update regular field
+        const updateData = { [fieldName]: uploadedFilePath };
+        await document.update(updateData);
+      }
+    } catch (updateError) {
+      // Rollback: delete the uploaded file if document update fails
+      forgeCleanerLog(`Document update failed, attempting to delete uploaded file: ${updateError.message}`);
+      try {
+        await FilePicker.delete('data', uploadedFilePath);
+        forgeCleanerLog('Rollback successful: uploaded file deleted');
+      } catch (deleteError) {
+        forgeCleanerLog(`Rollback failed: could not delete uploaded file: ${deleteError.message}`);
+        results.warnings.push({
+          type: 'Warning',
+          message: `File ${uploadedFilePath} was uploaded but document update failed and rollback failed. Manual cleanup may be required.`,
+        });
+      }
+      throw updateError;
+    }
+
+    // Delete the original file after successful move and update
+    try {
+      await FilePicker.delete('data', originalPath);
+      forgeCleanerLog(`Original file deleted: ${originalPath}`);
+    } catch (deleteError) {
+      forgeCleanerLog(`Warning: Could not delete original file ${originalPath}: ${deleteError.message}`);
+      results.warnings.push({
+        type: 'Warning',
+        message: `File moved successfully but original file ${originalPath} could not be deleted. Manual cleanup may be required.`,
+      });
     }
     
     results.success++;
-    forgeCleanerLog(`Successfully moved and updated: ${filePath} -> ${actualNewPath}`);
+    forgeCleanerLog(`Successfully moved and updated: ${filePath} -> ${uploadedFilePath}`);
   } catch (error) {
     forgeCleanerLog(`Failed to move file:`, error);
     throw error;
@@ -612,14 +678,15 @@ async function sendOrganizationSummary(results) {
     });
   }
 
+  if (results.warnings.length > 0) {
+    message += `<br><strong>${game.i18n.localize('FORGE_CLEANER.Summary.Warnings')}:</strong><br>`;
+    results.warnings.forEach(warning => {
+      message += `- ${warning.message}<br>`;
+    });
+  }
+
   ChatMessage.create({
     content: message,
-    whisper: [game.user.id]
+    whisper: [game.user.id],
   });
 }
-
-module.exports = {
-  applyOrganization,
-  optimizeFiles,
-  getOrganizationConfig,
-};

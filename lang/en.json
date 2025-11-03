@@ -64,5 +64,6 @@
   "FORGE_CLEANER.Error.OrganizationFailed": "Organization failed. Check the console for details.",
 
   "FORGE_CLEANER.Summary.Success": "Successfully organized files",
-  "FORGE_CLEANER.Summary.Failed": "Failed to organize"
+  "FORGE_CLEANER.Summary.Failed": "Failed to organize",
+  "FORGE_CLEANER.Summary.Warnings": "Warnings"
 }
