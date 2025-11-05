@@ -5,80 +5,6 @@
  * @license MIT
  */
 
-// --- ApplicationV2 Menus --- (Must be defined before settings registration)
-
-class ForgeCleanerApplyOrganizationMenu extends ApplicationV2 {
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: 'forge-cleaner-apply-organization',
-      title: game.i18n?.localize('FORGE_CLEANER.ApplyOrganization.Name') || 'Apply Organization',
-      width: 500,
-      height: 'auto',
-    });
-  }
-
-  async render(force, options) {
-    const config = getOrganizationConfig();
-    const summary = generateOrganizationSummary(config);
-
-    new Dialog({
-      title: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.ConfirmTitle'),
-      content: `<div>${game.i18n.localize('FORGE_CLEANER.ApplyOrganization.BackupWarning')}<p>${game.i18n.localize('FORGE_CLEANER.ApplyOrganization.ConfirmPrompt')}</p>${summary}</div>`,
-      buttons: {
-        confirm: {
-          icon: '<i class="fas fa-check"></i>',
-          label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Confirm'),
-          callback: async () => {
-            ui.notifications.info(game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Started'));
-            await applyOrganization(config);
-          }
-        },
-        cancel: {
-          icon: '<i class="fas fa-times"></i>',
-          label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Cancel'),
-        },
-      },
-      default: 'cancel'
-    }).render(true);
-  }
-}
-
-class ForgeCleanerOptimizeFilesMenu extends ApplicationV2 {
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: 'forge-cleaner-optimize-files',
-      title: game.i18n?.localize('FORGE_CLEANER.OptimizeFiles.Name') || 'Optimize Files',
-      width: 500,
-      height: 'auto',
-    });
-  }
-
-  async render(force, options) {
-    const folders = ['assets', 'tokens', 'scenes', 'audio', 'items'];
-    const summary = `<p><strong>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Summary')}</strong></p><p>${folders.map(f => `- ${f}`).join('<br>')}</p>`;
-
-    new Dialog({
-      title: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.ConfirmTitle'),
-      content: `<div>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.BackupWarning')}<p>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.ConfirmPrompt')}</p>${summary}</div>`,
-      buttons: {
-        confirm: {
-          icon: '<i class="fas fa-check"></i>',
-          label: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Confirm'),
-          callback: async () => {
-            ui.notifications.info(game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Started'));
-            await optimizeFiles(folders);
-          }
-        },
-        cancel: {
-          icon: '<i class="fas fa-times"></i>',
-          label: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Cancel'),
-        },
-      },
-      default: 'cancel'
-    }).render(true);
-  }
-}
-
 // --- Initialization ---
 
 Hooks.once('init', () => {
@@ -105,19 +31,36 @@ function registerForgeCleanerSettings() {
   }
 
   // Section 1: Apply Organization Button
-  try {
-    game.settings.registerMenu('forge-cleaner', 'applyOrganization', {
-      name: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Name'),
-      label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Label'),
-      hint: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Hint'),
-      icon: 'fas fa-sitemap',
-      type: ForgeCleanerApplyOrganizationMenu,
-      restricted: true,
-    });
-  } catch (error) {
-    console.error('Forge Cleaner | Error registering applyOrganization menu:', error);
-    throw error;
-  }
+  game.settings.registerMenu('forge-cleaner', 'applyOrganization', {
+    name: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Name'),
+    label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Label'),
+    hint: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Hint'),
+    icon: 'fas fa-sitemap',
+    restricted: true,
+    callback: () => {
+      const config = getOrganizationConfig();
+      const summary = generateOrganizationSummary(config);
+      new Dialog({
+        title: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.ConfirmTitle'),
+        content: `<div>${game.i18n.localize('FORGE_CLEANER.ApplyOrganization.BackupWarning')}<p>${game.i18n.localize('FORGE_CLEANER.ApplyOrganization.ConfirmPrompt')}</p>${summary}</div>`,
+        buttons: {
+          confirm: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Confirm'),
+            callback: async () => {
+              ui.notifications.info(game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Started'));
+              await applyOrganization(config);
+            }
+          },
+          cancel: {
+            icon: '<i class="fas fa-times"></i>',
+            label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Cancel'),
+          },
+        },
+        default: 'cancel'
+      }).render(true);
+    }
+  });
 
   // Section 2: Folder Configuration
   // Assets folder
@@ -232,8 +175,22 @@ function registerForgeCleanerSettings() {
     label: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Label'),
     hint: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Hint'),
     icon: 'fas fa-compress',
-    type: ForgeCleanerOptimizeFilesMenu,
     restricted: true,
+    callback: () => {
+      const folders = ['assets', 'tokens', 'scenes', 'audio', 'items'];
+      const summary = `<p><strong>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Summary')}</strong></p><p>${folders.map(f => `- ${f}`).join('<br>')}</p>`;
+      new Dialog({
+        title: game.i18n.localize('FORGE_CLEANER.OptimizeFiles.Name'),
+        content: `<div><p>${game.i18n.localize('FORGE_CLEANER.OptimizeFiles.NotImplemented')}</p>${summary}</div>`,
+        buttons: {
+          close: {
+            icon: '<i class="fas fa-times"></i>',
+            label: game.i18n.localize('FORGE_CLEANER.ApplyOrganization.Cancel'),
+          },
+        },
+        default: 'close'
+      }).render(true);
+    }
   });
 
   // Debug logging
@@ -534,31 +491,6 @@ async function organizeAssets(config, results) {
 }
 
 /**
- * Normalize a file path by removing leading slashes and handling data/ prefix.
- * @param {string} path - File path to normalize
- * @returns {string} Normalized path
- */
-function normalizeFilePath(path) {
-  if (!path) return '';
-  // Remove leading slashes
-  let normalized = path.replace(/^\/+/, '');
-  // Remove data/ prefix if present (FilePicker handles this)
-  normalized = normalized.replace(/^data\//, '');
-  return normalized;
-}
-
-/**
- * Normalize a folder path by removing leading/trailing slashes.
- * @param {string} path - Folder path to normalize
- * @returns {string} Normalized path
- */
-function normalizeFolderPath(path) {
-  if (!path) return '';
-  // Remove leading and trailing slashes
-  return path.replace(/^\/+/, '').replace(/\/+$/, '');
-}
-
-/**
  * Move a file to a new location and update the reference in the document.
  * Includes rollback on failure and deletes original file after success.
  * @param {string} filePath - Current file path
@@ -568,98 +500,48 @@ function normalizeFolderPath(path) {
  * @param {Object} results - Results tracking object
  */
 async function moveFileAndUpdateReference(filePath, targetFolder, document, field, results) {
-  // Handle embedded document updates (for playlist sounds)
   const isEmbeddedUpdate = typeof field === 'object';
   const embeddedDoc = isEmbeddedUpdate ? field : null;
   const fieldName = isEmbeddedUpdate ? 'path' : field;
 
-  // Normalize paths
-  const normalizedPath = normalizeFilePath(filePath);
-  const targetFolderNorm = normalizeFolderPath(targetFolder);
+  const decodedFilePath = decodeURIComponent(filePath);
+  const fileName = decodedFilePath.split('/').pop();
   
-  if (!normalizedPath || !targetFolderNorm) {
-    throw new Error('Invalid file path or target folder');
-  }
+  const targetPath = `${targetFolder}/${fileName}`;
 
-  // Check if file is already in the target folder
-  if (normalizedPath.startsWith(targetFolderNorm + '/') || normalizedPath === targetFolderNorm) {
+  if (decodedFilePath === targetPath) {
     forgeCleanerLog(`File already in target folder: ${filePath}`);
     return;
   }
 
-  // Construct new path
-  const fileName = normalizedPath.split('/').pop();
-  const newPath = `${targetFolderNorm}/${fileName}`;
-  const originalPath = normalizedPath;
-
-  let uploadedFilePath = null;
-
-  // Move the file using Foundry's file API
   try {
-    forgeCleanerLog(`Moving ${filePath} to ${newPath}`);
-    
-    // Get the file using Foundry's asset URL
-    // File paths in Foundry documents are relative to data root (without leading slash or assets/ prefix)
-    // Foundry serves files from /assets/ path
-    // Construct the URL by prepending /assets/ to the normalized path
-    const fileUrl = `/assets/${normalizedPath}`;
-    const response = await fetch(fileUrl);
-    
+    const response = await fetch(filePath);
     if (!response.ok) {
       throw new Error(`Failed to fetch file: ${response.statusText}`);
     }
-
     const fileData = await response.blob();
+    const file = new File([fileData], fileName, { type: fileData.type });
     
-    // Upload to new location
-    // FilePicker.upload(source, targetPath, file, options)
-    const uploadResult = await FilePicker.upload('data', newPath, fileData, {});
-    
-    if (!uploadResult || !uploadResult.path) {
-      throw new Error('Failed to upload file to new location');
-    }
+    const uploadResult = await FilePicker.upload('data', targetFolder, file, {});
+    const uploadedFilePath = uploadResult.path;
 
-    uploadedFilePath = uploadResult.path;
-    forgeCleanerLog(`File uploaded to: ${uploadedFilePath}`);
-
-    // Update the document with new path
     try {
       if (isEmbeddedUpdate) {
-        // Update embedded document
-        await document.updateEmbeddedDocuments('PlaylistSound', [{
-          _id: embeddedDoc.id,
-          path: uploadedFilePath,
-        }]);
+        await document.updateEmbeddedDocuments('PlaylistSound', [{ _id: embeddedDoc.id, path: uploadedFilePath }]);
       } else {
-        // Update regular field
-        const updateData = { [fieldName]: uploadedFilePath };
-        await document.update(updateData);
+        await document.update({ [fieldName]: uploadedFilePath });
       }
     } catch (updateError) {
-      // Rollback: delete the uploaded file if document update fails
-      forgeCleanerLog(`Document update failed, attempting to delete uploaded file: ${updateError.message}`);
-      try {
-        await FilePicker.delete('data', uploadedFilePath);
-        forgeCleanerLog('Rollback successful: uploaded file deleted');
-      } catch (deleteError) {
-        forgeCleanerLog(`Rollback failed: could not delete uploaded file: ${deleteError.message}`);
-        results.warnings.push({
-          type: 'Warning',
-          message: `File ${uploadedFilePath} was uploaded but document update failed and rollback failed. Manual cleanup may be required.`,
-        });
-      }
+      await FilePicker.delete('data', uploadedFilePath);
       throw updateError;
     }
 
-    // Delete the original file after successful move and update
     try {
-      await FilePicker.delete('data', originalPath);
-      forgeCleanerLog(`Original file deleted: ${originalPath}`);
+      await FilePicker.delete('data', decodedFilePath);
     } catch (deleteError) {
-      forgeCleanerLog(`Warning: Could not delete original file ${originalPath}: ${deleteError.message}`);
       results.warnings.push({
         type: 'Warning',
-        message: `File moved successfully but original file ${originalPath} could not be deleted. Manual cleanup may be required.`,
+        message: `File moved successfully but original file ${decodedFilePath} could not be deleted.`,
       });
     }
     
