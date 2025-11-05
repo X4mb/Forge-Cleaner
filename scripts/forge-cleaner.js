@@ -7,7 +7,7 @@
 
 // --- Initialization ---
 
-Hooks.once('init', () => {
+Hooks.once('i18nInit', () => {
   console.log('Forge Cleaner | Initializing module');
   try {
     registerForgeCleanerSettings();
